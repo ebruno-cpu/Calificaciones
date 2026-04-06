@@ -849,20 +849,25 @@ function drawDetailChart(e) {
   const col = getColor(e);
   const hex = colorHex(col);
 
+function drawDetailChart(e) {
+  const canvas = document.getElementById('hchart-' + e.id);
+  if (!canvas) return;
+  if (detailCharts[e.id]) detailCharts[e.id].destroy();
+
+  const borderColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
+  const bgColors = borderColors.map(c => c + '33');
+
   detailCharts[e.id] = new Chart(canvas, {
+    type: 'bar',
     data: {
       labels: e.history.map(h => h.label),
       datasets: [{
         data: e.history.map(h => h.score),
-        borderColor: hex,
-        backgroundColor: hex + '15',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointBackgroundColor: e.history.map(h => colorHex(estadoToColor(h.estado))),
-        pointBorderColor: '#0d0f14',
-        pointBorderWidth: 1.5,
-        pointHoverRadius: 6,
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false
       }]
     },
     options: {
@@ -872,12 +877,11 @@ function drawDetailChart(e) {
         legend: { display: false },
         tooltip: {
           callbacks: { label: ctx => ' Score: ' + Math.round(ctx.parsed.y) }
-        },
-        annotation: {}
+        }
       },
       scales: {
         y: {
-          min: 0, max: 1000,
+          max: 1000,
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: { color: '#555a6a', font: { size: 10 }, stepSize: 250 },
           border: { color: 'transparent' }
@@ -891,7 +895,6 @@ function drawDetailChart(e) {
     }
   });
 }
-
 function saveSummary(id) {
   const ta = document.getElementById('summary-' + id);
   if (ta) {
