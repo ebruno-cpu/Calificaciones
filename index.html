@@ -406,7 +406,7 @@ body {
     </div>
   </div>
 
-  <div class="filters">
+<div class="filters">
     <input type="text" id="search" placeholder="Buscar empresa, ticker o sector..." oninput="renderCards()">
     <select id="sec-filter" onchange="renderCards()">
       <option value="">Todos los sectores</option>
@@ -415,6 +415,13 @@ body {
       <option value="">Todos los tipos</option>
       <option value="Banco">Solo bancos</option>
       <option value="General">Solo no bancos</option>
+    </select>
+    
+    <select id="estado-filter" onchange="renderCards()">
+      <option value="">Todos los estados</option>
+      <option value="g">Recomendables</option>
+      <option value="y">Favorables -</option>
+      <option value="r">No recomendables</option>
     </select>
     <select id="sort-filter" onchange="renderCards()">
       <option value="score-desc">Mayor score primero</option>
