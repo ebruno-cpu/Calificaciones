@@ -306,7 +306,6 @@ body {
 .rchip-val.no-mkt { font-size: 11px; color: var(--text3); font-style: italic; }
 
 .history-section { margin-top: 1.25rem; }
-/* Aquí aumentamos el tamaño del gráfico de 140px a 280px */
 .history-chart-wrap { position: relative; width: 100%; height: 280px; margin-top: .5rem; }
 
 .state-msg {
@@ -406,7 +405,7 @@ body {
     </div>
   </div>
 
-<div class="filters">
+  <div class="filters">
     <input type="text" id="search" placeholder="Buscar empresa, ticker o sector..." oninput="renderCards()">
     <select id="sec-filter" onchange="renderCards()">
       <option value="">Todos los sectores</option>
@@ -422,7 +421,6 @@ body {
       <option value="y">Favorables -</option>
       <option value="r">No recomendables</option>
     </select>
-    
     <select id="period-filter" onchange="renderCards()">
       <option value="">Último período disponible</option>
     </select>
@@ -557,8 +555,8 @@ async function reloadData() {
       return {
         id,
         nombre: emp['Nombre'] || emp['Ticker'] || id,
-        ticker: emp['Ticker'] || '',
         sector: emp['Sector'] || '',
+        ticker: emp['Ticker'] || '',
         tipo: esBanco ? 'Banco' : 'General',
         score, estado, ratios, last, ratioKeys,
         history: ratios.map(r => ({
@@ -582,12 +580,13 @@ async function reloadData() {
     if (allPeriods.length) {
       document.getElementById('overview-period').textContent = 'Último período: ' + allPeriods[allPeriods.length - 1];
     }
-const allPeriodsSet = new Set();
+
+    const allPeriodsSet = new Set();
     allData.forEach(e => {
       e.history.forEach(h => allPeriodsSet.add(h.label));
     });
 
-    const sortedPeriods = Array.from(allPeriodsSet).sort((a, b) => {
+    const sortedPeriods = Array.from(allPeriodsSet).filter(p => p !== '—').sort((a, b) => {
       const pa = a.split('/');
       const pb = b.split('/');
       const da = new Date(`20${pa[2]}-${pa[1]}-${pa[0]}`);
@@ -604,6 +603,7 @@ const allPeriodsSet = new Set();
         periodSel.appendChild(o);
       });
     }
+
     setStatus('ok', 'Datos actualizados');
     document.getElementById('loading-msg').style.display = 'none';
     renderOverview();
@@ -672,17 +672,14 @@ function getFiltered() {
   const sec = document.getElementById('sec-filter').value;
   const tipo = document.getElementById('type-filter').value;
   const sort = document.getElementById('sort-filter').value;
-  const est = document.getElementById('estado-filter').value; // 1. Capturamos el valor del nuevo filtro
+  const est = document.getElementById('estado-filter').value;
 
   let list = allData.filter(e => {
     const mq = !q || e.nombre.toLowerCase().includes(q) || e.ticker.toLowerCase().includes(q) || e.sector.toLowerCase().includes(q);
     const ms = !sec || e.sector === sec;
     const mt = !tipo || e.tipo === tipo;
-    
-    // 2. Evaluamos si el color actual de la empresa coincide con el seleccionado
     const me = !est || getColor(e) === est; 
-    
-    return mq && ms && mt && me; // 3. Sumamos esta condición al resultado final
+    return mq && ms && mt && me;
   });
 
   if (sort === 'score-desc') list.sort((a, b) => b.score - a.score);
@@ -800,85 +797,6 @@ function renderCards() {
     if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
   });
 }
-  container.innerHTML = filtered.map(e => {
-    const col = getColor(e);
-    const hex = colorHex(col);
-    const pct = Math.round((e.score / 1000) * 100);
-    const isOpen = !!expanded[e.id];
-    const lastLabel = e.history.length ? e.history[e.history.length - 1].label : '—';
-    const prevScore = e.history.length > 1 ? e.history[e.history.length - 2].score : null;
-    const delta = prevScore !== null ? Math.round(e.score - prevScore) : null;
-    const deltaHtml = delta !== null
-      ? `<span style="font-size:11px;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'};">${delta >= 0 ? '+' : ''}${delta}</span>`
-      : '';
-    const estadoLabel = e.estado || '—';
-
-    const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
-    const qualiHtml = qualiKeys.map(k => {
-      const v = e.last[k] || '—';
-      return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
-    }).join('');
-
-    const ratioHtml = e.ratioKeys.map(k => {
-      const raw = e.last[k];
-      const v = fmtVal(raw);
-      const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
-      return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
-    }).join('');
-
-    // Se eliminó la variable 'summary' y el div de 'exec-summary'
-    return `
-<div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
-  <div class="ccard-head">
-    <div class="score-ring ring-${col}">
-      <svg width="52" height="52" viewBox="0 0 52 52">
-        <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
-        <circle cx="26" cy="26" r="22" fill="none" stroke="${hex}" stroke-width="3"
-          stroke-dasharray="${Math.round(2*Math.PI*22*e.score/1000)} ${Math.round(2*Math.PI*22)}"
-          stroke-linecap="round"/>
-      </svg>
-      <span>${Math.round(e.score)}</span>
-    </div>
-    <div class="ccard-meta">
-      <div class="ccard-name">${e.nombre}<span class="sector-badge">${e.sector}</span></div>
-      <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Último balance: ${lastLabel} ${deltaHtml}</div>
-      <div class="score-strip" style="margin-top:6px">
-        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
-        <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${e.score > 0 ? (e.score/10).toFixed(0)+'%' : '—'}</span>
-      </div>
-    </div>
-    <span class="pill ${e.tipo === 'Banco' ? 'pill-banco' : 'pill-gen'}">${e.tipo === 'Banco' ? 'Banco' : 'No banco'}</span>
-    <span class="pill" style="background:${hex}22;color:${hex};border:1px solid ${hex}44">${estadoLabel}</span>
-    <div class="traffic-light">
-      <div class="tl-dot ${col === 'r' ? 'on-r' : ''}"></div>
-      <div class="tl-dot ${col === 'y' ? 'on-y' : ''}"></div>
-      <div class="tl-dot ${col === 'g' ? 'on-g' : ''}"></div>
-    </div>
-    <span class="chev ${isOpen ? 'open' : ''}">▼</span>
-  </div>
-  <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
-    <div class="detail-grid">
-      <div>
-        <div class="sub-label">Factores cualitativos</div>
-        <div class="quali-list">${qualiHtml}</div>
-      </div>
-      <div>
-        <div class="sub-label">Ratios — período ${lastLabel}</div>
-        <div class="ratio-chips">${ratioHtml}</div>
-      </div>
-    </div>
-    <div class="history-section">
-      <div class="sub-label">Historial de score</div>
-      <div class="history-chart-wrap"><canvas id="hchart-${e.id}"></canvas></div>
-    </div>
-  </div>
-</div>`;
-  }).join('');
-
-  filtered.forEach(e => {
-    if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
-  });
-}
 
 function toggleCard(event, id) {
   expanded[id] = !expanded[id];
@@ -925,7 +843,6 @@ function drawDetailChart(e) {
     yScaleConfig.beginAtZero = false;
   }
 
-  // Nuevo plugin que dibuja las etiquetas en todos los puntos
   const allLabelsPlugin = {
     id: 'allLabels',
     afterDatasetsDraw(chart) {
@@ -938,7 +855,6 @@ function drawDetailChart(e) {
       ctx.fillStyle = '#e8eaf0';
       ctx.textAlign = 'center';
 
-      // Recorremos todos los datos del historial
       dataset.forEach((val, i) => {
         const point = meta.data[i];
         if (!point) return;
@@ -946,7 +862,6 @@ function drawDetailChart(e) {
         const x = point.x;
         let y = point.y;
 
-        // Si el score es positivo o cero, el número va arriba. Si es negativo, va abajo.
         if (val >= 0) {
           ctx.textBaseline = 'bottom';
           y -= 8;
@@ -997,11 +912,9 @@ function drawDetailChart(e) {
         }
       }
     },
-    plugins: [allLabelsPlugin] // Agregamos el nuevo plugin aquí
+    plugins: [allLabelsPlugin]
   });
 }
-
-// Se borraron saveSummary() y clearSummary() para limpiar el código
 
 reloadData();
 </script>
