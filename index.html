@@ -306,46 +306,8 @@ body {
 .rchip-val.no-mkt { font-size: 11px; color: var(--text3); font-style: italic; }
 
 .history-section { margin-top: 1.25rem; }
-.history-chart-wrap { position: relative; width: 100%; height: 140px; margin-top: .5rem; }
-
-.exec-summary {
-  margin-top: 1.25rem;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 1rem;
-}
-.exec-summary textarea {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: var(--text2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  line-height: 1.7;
-  resize: vertical;
-  min-height: 80px;
-  outline: none;
-}
-.exec-summary textarea::placeholder { color: var(--text3); }
-.exec-actions {
-  display: flex; justify-content: flex-end; gap: 8px;
-  margin-top: 8px;
-}
-.btn-sm {
-  background: transparent;
-  border: 1px solid var(--border2);
-  color: var(--text2);
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all .2s;
-}
-.btn-sm:hover { border-color: var(--accent); color: var(--accent); }
-.btn-sm.save { border-color: var(--green-border); color: var(--green); }
-.btn-sm.save:hover { background: var(--green-bg); }
+/* Aquí aumentamos el tamaño del gráfico de 140px a 280px */
+.history-chart-wrap { position: relative; width: 100%; height: 280px; margin-top: .5rem; }
 
 .state-msg {
   text-align: center; padding: 3rem 1rem;
@@ -478,9 +440,6 @@ let allData = [];
 let overviewChart = null;
 let detailCharts = {};
 let expanded = {};
-let summaries = {};
-
-try { summaries = JSON.parse(localStorage.getItem('cr_summaries') || '{}'); } catch(e) {}
 
 function setStatus(state, msg) {
   const dot = document.getElementById('status-dot');
@@ -736,8 +695,7 @@ function renderCards() {
       return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
     }).join('');
 
-    const summary = summaries[e.id] || '';
-
+    // Se eliminó la variable 'summary' y el div de 'exec-summary'
     return `
 <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
   <div class="ccard-head">
@@ -781,14 +739,6 @@ function renderCards() {
     <div class="history-section">
       <div class="sub-label">Historial de score</div>
       <div class="history-chart-wrap"><canvas id="hchart-${e.id}"></canvas></div>
-    </div>
-    <div class="exec-summary" onclick="event.stopPropagation()">
-      <div class="sub-label" style="margin-bottom:.5rem">Resumen ejecutivo</div>
-      <textarea id="summary-${e.id}" placeholder="Ingresá acá los highlights de la empresa, factores que podrían afectar la calificación, contexto de negocio, etc." onclick="event.stopPropagation()">${summary}</textarea>
-      <div class="exec-actions">
-        <button class="btn-sm" onclick="clearSummary('${e.id}')">Limpiar</button>
-        <button class="btn-sm save" onclick="saveSummary('${e.id}')">Guardar</button>
-      </div>
     </div>
   </div>
 </div>`;
@@ -930,23 +880,8 @@ function drawDetailChart(e) {
     plugins: [minMaxPlugin]
   });
 }
-function saveSummary(id) {
-  const ta = document.getElementById('summary-' + id);
-  if (ta) {
-    summaries[id] = ta.value;
-    try { localStorage.setItem('cr_summaries', JSON.stringify(summaries)); } catch (e) {}
-    const btn = ta.closest('.exec-summary').querySelector('.btn-sm.save');
-    const orig = btn.textContent;
-    btn.textContent = '✓ Guardado';
-    btn.style.color = 'var(--green)';
-    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
-  }
-}
 
-function clearSummary(id) {
-  const ta = document.getElementById('summary-' + id);
-  if (ta) { ta.value = ''; summaries[id] = ''; try { localStorage.setItem('cr_summaries', JSON.stringify(summaries)); } catch (e) {} }
-}
+// Se borraron saveSummary() y clearSummary() para limpiar el código
 
 reloadData();
 </script>
