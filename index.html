@@ -508,8 +508,10 @@ function fmtVal(v, key = '') {
   const s = String(v);
   if (s.toLowerCase().includes('no mkt') || s.toLowerCase().includes('no market')) return 'Sin Mkt Cap';
 
-  if (typeof v === 'number' || !isNaN(parseFloat(v))) {
-    const num = parseFloat(v);
+  const cleanStr = s.replace(',', '.');
+
+  if (!isNaN(parseFloat(cleanStr))) {
+    const num = parseFloat(cleanStr);
 
     if (key === 'Net CapEx') {
       const fmt = new Intl.NumberFormat('es-AR', {
@@ -522,6 +524,20 @@ function fmtVal(v, key = '') {
       if (num < 0) return `<span style="color: var(--red);">${fmt}</span>`;
       return fmt;
     }
+
+    if (key === 'Márgen' || key === 'Crecimiento Ventas') {
+      return (num * 100).toFixed(0) + '%';
+    }
+
+    if (key.includes('Mkt. Cap')) {
+      return num.toFixed(2);
+    }
+
+    return parseFloat(num.toFixed(3)).toString();
+  }
+
+  return s;
+}
 
     if (key === 'Márgen' || key === 'Crecimiento Ventas') {
       return (num * 100).toFixed(0) + '%';
