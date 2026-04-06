@@ -539,16 +539,6 @@ function fmtVal(v, key = '') {
   return s;
 }
 
-    if (key === 'Márgen' || key === 'Crecimiento Ventas') {
-      return (num * 100).toFixed(0) + '%';
-    }
-
-    return parseFloat(num.toFixed(3)).toString();
-  }
-
-  return s;
-}
-
 function estadoToColor(estado) {
   const s = String(estado || '').trim().toLowerCase();
   if (s === 'recomendable') return 'g';
