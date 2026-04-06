@@ -840,10 +840,56 @@ function drawDetailChart(e) {
     yScaleConfig.min = 0;
     yScaleConfig.beginAtZero = true;
   } else {
-    // Para asegurarnos de que no haya un mínimo forzado cuando HAY negativos
     delete yScaleConfig.min;
     yScaleConfig.beginAtZero = false;
   }
+
+  const minMaxPlugin = {
+    id: 'minMaxLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const dataset = chart.data.datasets[0].data;
+
+      ctx.save();
+      ctx.font = '600 11px "DM Sans", sans-serif';
+      ctx.fillStyle = '#e8eaf0';
+      ctx.textAlign = 'center';
+
+      let maxVal = -Infinity, minVal = Infinity;
+      let maxIdx = -1, minIdx = -1;
+
+      dataset.forEach((val, i) => {
+        if (val > maxVal) { maxVal = val; maxIdx = i; }
+        if (val < minVal) { minVal = val; minIdx = i; }
+      });
+
+      const drawLabel = (index, value) => {
+        if (index === -1) return;
+        const point = meta.data[index];
+        if (!point) return;
+        
+        const x = point.x;
+        let y = point.y;
+
+        if (value >= 0) {
+          ctx.textBaseline = 'bottom';
+          y -= 8;
+        } else {
+          ctx.textBaseline = 'top';
+          y += 8;
+        }
+        ctx.fillText(Math.round(value), x, y);
+      };
+
+      drawLabel(maxIdx, maxVal);
+      if (minIdx !== maxIdx) {
+        drawLabel(minIdx, minVal);
+      }
+
+      ctx.restore();
+    }
+  };
 
   detailCharts[e.id] = new Chart(canvas, {
     type: 'line',
@@ -880,7 +926,8 @@ function drawDetailChart(e) {
           border: { color: 'transparent' }
         }
       }
-    }
+    },
+    plugins: [minMaxPlugin]
   });
 }
 function saveSummary(id) {
