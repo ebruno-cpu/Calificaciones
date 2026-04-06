@@ -648,12 +648,17 @@ function getFiltered() {
   const sec = document.getElementById('sec-filter').value;
   const tipo = document.getElementById('type-filter').value;
   const sort = document.getElementById('sort-filter').value;
+  const est = document.getElementById('estado-filter').value; // 1. Capturamos el valor del nuevo filtro
 
   let list = allData.filter(e => {
     const mq = !q || e.nombre.toLowerCase().includes(q) || e.ticker.toLowerCase().includes(q) || e.sector.toLowerCase().includes(q);
     const ms = !sec || e.sector === sec;
     const mt = !tipo || e.tipo === tipo;
-    return mq && ms && mt;
+    
+    // 2. Evaluamos si el color actual de la empresa coincide con el seleccionado
+    const me = !est || getColor(e) === est; 
+    
+    return mq && ms && mt && me; // 3. Sumamos esta condición al resultado final
   });
 
   if (sort === 'score-desc') list.sort((a, b) => b.score - a.score);
