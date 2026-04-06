@@ -794,8 +794,9 @@ function drawDetailChart(e) {
     yScaleConfig.beginAtZero = false;
   }
 
-  const minMaxPlugin = {
-    id: 'minMaxLabels',
+  // Nuevo plugin que dibuja las etiquetas en todos los puntos
+  const allLabelsPlugin = {
+    id: 'allLabels',
     afterDatasetsDraw(chart) {
       const { ctx } = chart;
       const meta = chart.getDatasetMeta(0);
@@ -806,36 +807,24 @@ function drawDetailChart(e) {
       ctx.fillStyle = '#e8eaf0';
       ctx.textAlign = 'center';
 
-      let maxVal = -Infinity, minVal = Infinity;
-      let maxIdx = -1, minIdx = -1;
-
+      // Recorremos todos los datos del historial
       dataset.forEach((val, i) => {
-        if (val > maxVal) { maxVal = val; maxIdx = i; }
-        if (val < minVal) { minVal = val; minIdx = i; }
-      });
-
-      const drawLabel = (index, value) => {
-        if (index === -1) return;
-        const point = meta.data[index];
+        const point = meta.data[i];
         if (!point) return;
         
         const x = point.x;
         let y = point.y;
 
-        if (value >= 0) {
+        // Si el score es positivo o cero, el número va arriba. Si es negativo, va abajo.
+        if (val >= 0) {
           ctx.textBaseline = 'bottom';
           y -= 8;
         } else {
           ctx.textBaseline = 'top';
           y += 8;
         }
-        ctx.fillText(Math.round(value), x, y);
-      };
-
-      drawLabel(maxIdx, maxVal);
-      if (minIdx !== maxIdx) {
-        drawLabel(minIdx, minVal);
-      }
+        ctx.fillText(Math.round(val), x, y);
+      });
 
       ctx.restore();
     }
@@ -877,7 +866,7 @@ function drawDetailChart(e) {
         }
       }
     },
-    plugins: [minMaxPlugin]
+    plugins: [allLabelsPlugin] // Agregamos el nuevo plugin aquí
   });
 }
 
