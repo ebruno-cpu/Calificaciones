@@ -838,6 +838,11 @@ function drawDetailChart(e) {
 
   if (!hasNegative) {
     yScaleConfig.min = 0;
+    yScaleConfig.beginAtZero = true;
+  } else {
+    // Para asegurarnos de que no haya un mínimo forzado cuando HAY negativos
+    delete yScaleConfig.min;
+    yScaleConfig.beginAtZero = false;
   }
 
   detailCharts[e.id] = new Chart(canvas, {
