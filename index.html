@@ -350,6 +350,21 @@ body {
   border: 1px solid var(--border);
   margin-left: 6px;
 }
+
+.card-select {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 3px 6px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  cursor: pointer;
+  transition: all .2s;
+}
+.card-select:hover { border-color: var(--accent); color: var(--text); }
+.card-select option { background: var(--bg2); color: var(--text); }
 </style>
 </head>
 <body>
@@ -420,9 +435,6 @@ body {
       <option value="g">Recomendables</option>
       <option value="y">Favorables -</option>
       <option value="r">No recomendables</option>
-    </select>
-    <select id="period-filter" onchange="renderCards()">
-      <option value="">Último período disponible</option>
     </select>
     <select id="sort-filter" onchange="renderCards()">
       <option value="score-desc">Mayor score primero</option>
@@ -581,29 +593,6 @@ async function reloadData() {
       document.getElementById('overview-period').textContent = 'Último período: ' + allPeriods[allPeriods.length - 1];
     }
 
-    const allPeriodsSet = new Set();
-    allData.forEach(e => {
-      e.history.forEach(h => allPeriodsSet.add(h.label));
-    });
-
-    const sortedPeriods = Array.from(allPeriodsSet).filter(p => p !== '—').sort((a, b) => {
-      const pa = a.split('/');
-      const pb = b.split('/');
-      const da = new Date(`20${pa[2]}-${pa[1]}-${pa[0]}`);
-      const db = new Date(`20${pb[2]}-${pb[1]}-${pb[0]}`);
-      return db - da; 
-    });
-
-    const periodSel = document.getElementById('period-filter');
-    if (periodSel) {
-      periodSel.innerHTML = '<option value="">Último período disponible</option>';
-      sortedPeriods.forEach(p => {
-        const o = document.createElement('option');
-        o.value = p; o.textContent = p;
-        periodSel.appendChild(o);
-      });
-    }
-
     setStatus('ok', 'Datos actualizados');
     document.getElementById('loading-msg').style.display = 'none';
     renderOverview();
@@ -691,8 +680,6 @@ function getFiltered() {
 
 function renderCards() {
   const filtered = getFiltered();
-  const selectedPeriod = document.getElementById('period-filter') ? document.getElementById('period-filter').value : '';
-  
   document.getElementById('count-label').textContent = filtered.length + ' empresa' + (filtered.length !== 1 ? 's' : '');
 
   Object.keys(detailCharts).forEach(k => { try { detailCharts[k].destroy(); } catch (e) {} });
@@ -718,19 +705,12 @@ function renderCards() {
       : '';
     const estadoLabel = e.estado || '—';
 
-    let targetData = e.last;
-    let ratiosLabel = lastLabel;
+    // Generar opciones de fecha dinámicamente para esta empresa, desde la más reciente a la más antigua
+    const periodOptions = [...e.history].reverse().map(h => {
+      return `<option value="${h.label}">${h.label}</option>`;
+    }).join('');
 
-    if (selectedPeriod !== '') {
-      const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === selectedPeriod);
-      if (targetRatio) {
-        targetData = targetRatio;
-        ratiosLabel = selectedPeriod;
-      } else {
-        targetData = {};
-        ratiosLabel = selectedPeriod + ' (Sin datos)';
-      }
-    }
+    const targetData = e.last;
 
     const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
     const qualiHtml = qualiKeys.map(k => {
@@ -778,11 +758,16 @@ function renderCards() {
     <div class="detail-grid">
       <div>
         <div class="sub-label">Factores cualitativos</div>
-        <div class="quali-list">${qualiHtml}</div>
+        <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
       </div>
       <div>
-        <div class="sub-label">Ratios — período ${ratiosLabel}</div>
-        <div class="ratio-chips">${ratioHtml}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
+          <div class="sub-label" style="margin-bottom:0">Ratios — período</div>
+          <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
+            ${periodOptions}
+          </select>
+        </div>
+        <div class="ratio-chips" id="ratios-${e.id}">${ratioHtml}</div>
       </div>
     </div>
     <div class="history-section">
@@ -796,6 +781,31 @@ function renderCards() {
   filtered.forEach(e => {
     if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
   });
+}
+
+function updateCardPeriod(event, id, selectedPeriod) {
+  event.stopPropagation(); // Evita que la tarjeta se cierre al hacer clic en el menú
+  const e = allData.find(x => x.id === id);
+  if (!e) return;
+
+  const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === selectedPeriod);
+  const targetData = targetRatio || {};
+
+  const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
+  const qualiHtml = qualiKeys.map(k => {
+    const v = targetData[k] || '—';
+    return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
+  }).join('');
+
+  const ratioHtml = e.ratioKeys.map(k => {
+    const raw = targetData[k];
+    const v = fmtVal(raw);
+    const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
+    return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
+  }).join('');
+
+  document.getElementById(`quali-${id}`).innerHTML = qualiHtml;
+  document.getElementById(`ratios-${id}`).innerHTML = ratioHtml;
 }
 
 function toggleCard(event, id) {
