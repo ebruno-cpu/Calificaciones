@@ -823,20 +823,27 @@ function drawDetailChart(e) {
   if (!canvas) return;
   if (detailCharts[e.id]) detailCharts[e.id].destroy();
 
-  const borderColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
-  const bgColors = borderColors.map(c => c + '33');
+  const col = getColor(e);
+  const hex = colorHex(col);
+
+  const pointColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
 
   detailCharts[e.id] = new Chart(canvas, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: e.history.map(h => h.label),
       datasets: [{
         data: e.history.map(h => h.score),
-        backgroundColor: bgColors,
-        borderColor: borderColors,
-        borderWidth: 1.5,
-        borderRadius: 4,
-        borderSkipped: false
+        borderColor: hex + '66',
+        borderWidth: 2,
+        backgroundColor: hex + '10',
+        fill: true,
+        tension: 0,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: '#0d0f14',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 8
       }]
     },
     options: {
