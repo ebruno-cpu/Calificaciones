@@ -122,31 +122,17 @@ body {
 }
 .section-head span { font-size: 12px; color: var(--text3); }
 
-/* ── THRESHOLD BAR ── */
-.threshold-bar {
+/* ── LEGEND BAR ── */
+.legend-bar {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
+  padding: .875rem 1.25rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-}
-.threshold-bar label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--text2);
-}
-.threshold-bar input[type=number] {
-  width: 62px; height: 30px;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 13px;
-  padding: 0 8px;
-  font-family: 'DM Sans', sans-serif;
 }
 .tl-indicator {
   display: flex; align-items: center; gap: 6px;
@@ -446,24 +432,22 @@ body {
 
   <div id="err-bar" class="err-bar" style="display:none"></div>
 
-  <!-- Threshold controls -->
-  <div class="threshold-bar">
-    <span style="font-size:12px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Umbrales</span>
-    <label>
-      <span class="tl-circle" style="background:var(--red)"></span>
-      Rojo &lt;
-      <input type="number" id="th-r" value="400" min="0" max="999" oninput="onThresholdChange()">
-    </label>
-    <label>
-      <span class="tl-circle" style="background:var(--yellow)"></span>
-      Amarillo &lt;
-      <input type="number" id="th-y" value="700" min="0" max="1000" oninput="onThresholdChange()">
-    </label>
-    <div class="tl-indicator" style="gap:6px">
+  <!-- Estado legend -->
+  <div class="legend-bar">
+    <span style="font-size:12px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Estado</span>
+    <div class="tl-indicator">
       <span class="tl-circle" style="background:var(--green)"></span>
-      <span style="font-size:12px;color:var(--text2)">Verde ≥ umbral amarillo</span>
+      <span>Recomendable</span>
     </div>
-    <span style="margin-left:auto;font-size:11px;color:var(--text3)">Los cambios aplican en tiempo real</span>
+    <div class="tl-indicator">
+      <span class="tl-circle" style="background:var(--yellow)"></span>
+      <span>Favorable -</span>
+    </div>
+    <div class="tl-indicator">
+      <span class="tl-circle" style="background:var(--red)"></span>
+      <span>No recomendable</span>
+    </div>
+    <span style="margin-left:auto;font-size:11px;color:var(--text3)">Color basado en columna Estado del Sheet</span>
   </div>
 
   <!-- Overview chart -->
@@ -543,6 +527,8 @@ function parseDate(v) {
   if (v instanceof Date) return v;
   if (typeof v === 'number') return new Date((v - 25569) * 86400000);
   const s = String(v);
+  const gMatch = s.match(/Date\((\d{4}),(\d+),(\d+)\)/);
+  if (gMatch) return new Date(+gMatch[1], +gMatch[2], +gMatch[3]);
   const p = s.split('/');
   if (p.length === 3) {
     const y = p[2].length === 2 ? '20' + p[2] : p[2];
@@ -565,12 +551,16 @@ function fmtVal(v) {
   return s;
 }
 
-function getColor(score) {
-  const r = parseInt(document.getElementById('th-r').value) || 400;
-  const y = parseInt(document.getElementById('th-y').value) || 700;
-  if (score < r) return 'r';
-  if (score < y) return 'y';
-  return 'g';
+function estadoToColor(estado) {
+  const s = String(estado || '').trim().toLowerCase();
+  if (s === 'recomendable') return 'g';
+  if (s.startsWith('favorable')) return 'y';
+  if (s === 'no recomendable') return 'r';
+  return 'y';
+}
+
+function getColor(e) {
+  return estadoToColor(e.estado);
 }
 
 function colorHex(c) {
@@ -608,6 +598,7 @@ async function reloadData() {
 
       const last = ratios[ratios.length - 1] || {};
       const score = parseFloat(last['Score']) || 0;
+      const estado = String(last['Estado'] || '').trim();
 
       const ratioKeys = esBanco
         ? ['Resultado Final / Ventas','Mkt. Cap / Ventas','Mkt. Cap / PN','Márgen','Crecimiento Ventas','Apalancamiento','Cartera en Situación 2 a 5','Previsiones sobre Cartera Irregular Total','Total Cartera Irregular / Total Financiaciones','Efectivo y Depósito en Bancos / Activo','Absorción de Gastos de Ad. con Volúmen de Negocio','Rendimiento Anual del Patrimonio','Retorno sobre Activos','Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs']
@@ -619,8 +610,12 @@ async function reloadData() {
         ticker: emp['Ticker'] || '',
         sector: emp['Sector'] || '',
         tipo: esBanco ? 'Banco' : 'General',
-        score, ratios, last, ratioKeys,
-        history: ratios.map(r => ({ label: fmtDate(r['Trimestre']), score: parseFloat(r['Score']) || 0 }))
+        score, estado, ratios, last, ratioKeys,
+        history: ratios.map(r => ({
+          label: fmtDate(r['Trimestre']),
+          score: parseFloat(r['Score']) || 0,
+          estado: String(r['Estado'] || '').trim()
+        }))
       };
     }).filter(e => e.ratios.length > 0);
 
@@ -657,7 +652,7 @@ function renderOverview() {
   const sorted = [...allData].sort((a, b) => b.score - a.score);
   const labels = sorted.map(e => e.nombre.length > 18 ? e.nombre.substring(0, 16) + '…' : e.nombre);
   const scores = sorted.map(e => e.score);
-  const colors = sorted.map(e => colorHex(getColor(e.score)));
+  const colors = sorted.map(e => colorHex(getColor(e)));
 
   if (overviewChart) overviewChart.destroy();
   const isDark = true;
@@ -703,18 +698,6 @@ function renderOverview() {
   });
 }
 
-function onThresholdChange() {
-  renderOverview();
-  renderCards();
-  // redraw open detail charts
-  Object.keys(expanded).forEach(id => {
-    if (expanded[id]) {
-      const e = allData.find(x => x.id === id);
-      if (e) setTimeout(() => drawDetailChart(e), 50);
-    }
-  });
-}
-
 function getFiltered() {
   const q = (document.getElementById('search').value || '').toLowerCase();
   const sec = document.getElementById('sec-filter').value;
@@ -749,7 +732,7 @@ function renderCards() {
   }
 
   container.innerHTML = filtered.map(e => {
-    const col = getColor(e.score);
+    const col = getColor(e);
     const hex = colorHex(col);
     const pct = Math.round((e.score / 1000) * 100);
     const isOpen = !!expanded[e.id];
@@ -759,6 +742,7 @@ function renderCards() {
     const deltaHtml = delta !== null
       ? `<span style="font-size:11px;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'};">${delta >= 0 ? '+' : ''}${delta}</span>`
       : '';
+    const estadoLabel = e.estado || '—';
 
     // qualitative rows
     const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
@@ -798,6 +782,7 @@ function renderCards() {
       </div>
     </div>
     <span class="pill ${e.tipo === 'Banco' ? 'pill-banco' : 'pill-gen'}">${e.tipo === 'Banco' ? 'Banco' : 'No banco'}</span>
+    <span class="pill" style="background:${hex}22;color:${hex};border:1px solid ${hex}44">${estadoLabel}</span>
     <div class="traffic-light">
       <div class="tl-dot ${col === 'r' ? 'on-r' : ''}"></div>
       <div class="tl-dot ${col === 'y' ? 'on-y' : ''}"></div>
@@ -861,13 +846,10 @@ function drawDetailChart(e) {
   if (!canvas) return;
   if (detailCharts[e.id]) detailCharts[e.id].destroy();
 
-  const col = getColor(e.score);
+  const col = getColor(e);
   const hex = colorHex(col);
-  const r = parseInt(document.getElementById('th-r').value) || 400;
-  const y = parseInt(document.getElementById('th-y').value) || 700;
 
   detailCharts[e.id] = new Chart(canvas, {
-    type: 'line',
     data: {
       labels: e.history.map(h => h.label),
       datasets: [{
@@ -877,7 +859,7 @@ function drawDetailChart(e) {
         fill: true,
         tension: 0.35,
         pointRadius: 4,
-        pointBackgroundColor: e.history.map(h => colorHex(getColor(h.score))),
+        pointBackgroundColor: e.history.map(h => colorHex(estadoToColor(h.estado))),
         pointBorderColor: '#0d0f14',
         pointBorderWidth: 1.5,
         pointHoverRadius: 6,
@@ -908,28 +890,6 @@ function drawDetailChart(e) {
       }
     }
   });
-
-  // Draw threshold lines manually
-  const chart = detailCharts[e.id];
-  const originalDraw = chart.draw.bind(chart);
-  detailCharts[e.id].draw = function() {
-    originalDraw();
-    const ctx = canvas.getContext('2d');
-    const yAxis = chart.scales.y;
-    const xAxis = chart.scales.x;
-    [[r, '#e85454'], [y, '#f0b429']].forEach(([val, color]) => {
-      const yPx = yAxis.getPixelForValue(val);
-      ctx.save();
-      ctx.strokeStyle = color + '55';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(xAxis.left, yPx);
-      ctx.lineTo(xAxis.right, yPx);
-      ctx.stroke();
-      ctx.restore();
-    });
-  };
 }
 
 function saveSummary(id) {
