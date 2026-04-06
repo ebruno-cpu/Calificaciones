@@ -827,6 +827,18 @@ function drawDetailChart(e) {
   const hex = colorHex(col);
 
   const pointColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
+  const hasNegative = e.history.some(h => h.score < 0);
+
+  const yScaleConfig = {
+    max: 1000,
+    grid: { color: 'rgba(255,255,255,0.04)' },
+    ticks: { color: '#555a6a', font: { size: 10 }, stepSize: 250 },
+    border: { color: 'transparent' }
+  };
+
+  if (!hasNegative) {
+    yScaleConfig.min = 0;
+  }
 
   detailCharts[e.id] = new Chart(canvas, {
     type: 'line',
@@ -856,12 +868,7 @@ function drawDetailChart(e) {
         }
       },
       scales: {
-        y: {
-          max: 1000,
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#555a6a', font: { size: 10 }, stepSize: 250 },
-          border: { color: 'transparent' }
-        },
+        y: yScaleConfig,
         x: {
           grid: { display: false },
           ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 45, autoSkip: false },
@@ -871,7 +878,6 @@ function drawDetailChart(e) {
     }
   });
 }
-
 function saveSummary(id) {
   const ta = document.getElementById('summary-' + id);
   if (ta) {
