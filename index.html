@@ -406,18 +406,21 @@ body {
   </div>
 
 <div class="overview-card">
-    <div class="section-head" style="justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: baseline; gap: 12px;">
-        <h2>Comparativa General</h2>
-        <span id="overview-period">—</span>
-      </div>
-<select id="overview-period-filter" onchange="onGlobalPeriodChange()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
-</select>
+  <div class="section-head" style="justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: baseline; gap: 12px;">
+      <h2>Comparativa General</h2>
+      <span id="overview-period" style="font-size: 12px; color: var(--text3);">—</span>
     </div>
-    <div class="chart-wrap">
-      <canvas id="overview-chart"></canvas>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span id="overview-latest-period" style="font-size: 11px; color: var(--text3);"></span>
+      <select id="overview-period-filter" onchange="onGlobalPeriodChange()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
+      </select>
     </div>
   </div>
+  <div class="chart-wrap">
+    <canvas id="overview-chart"></canvas>
+  </div>
+</div>
 
   <div class="filters">
     <input type="text" id="search" placeholder="Buscar empresa, ticker o sector..." oninput="renderCards()">
@@ -624,7 +627,9 @@ async function reloadData() {
         overviewSel.appendChild(o);
       });
       if (sortedCommon.length > 0) {
-        document.getElementById('overview-period').textContent = 'Mostrando: ' + sortedCommon[0];
+        document.getElementById('overview-period').textContent = 'Información al: ' + sortedCommon[0];
+        const latestSpan = document.getElementById('overview-latest-period');
+        if (latestSpan) latestSpan.textContent = 'Último balance: ' + sortedCommon[0];
       }
     }
     setStatus('ok', 'Datos actualizados');
@@ -643,7 +648,7 @@ async function reloadData() {
 function renderOverview() {
   const selectedPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
   if (selectedPeriod) {
-    document.getElementById('overview-period').textContent = 'Mostrando: ' + selectedPeriod;
+    document.getElementById('overview-period').textContent = 'Información al: ' + selectedPeriod;
   }
   const periodData = [];
   allData.forEach(e => {
@@ -768,6 +773,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   const targetScore = currentHist.score || 0;
   const targetEstado = currentHist.estado || '—';
   const targetLabel = currentHist.label || '—';
+  const absoluteLatestLabel = e.history.length > 0 ? e.history[e.history.length - 1].label : '—';
   const prevHist = targetIdx > 0 ? e.history[targetIdx - 1] : null;
   const prevScore = prevHist ? prevHist.score : null;
   const delta = prevScore !== null ? Math.round(targetScore - prevScore) : null;
@@ -832,10 +838,13 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         </div>
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-            <div class="sub-label" style="margin-bottom:0">Ratios — período</div>
-            <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
-              ${periodOptions}
-            </select>
+            <div class="sub-label" style="margin-bottom:0; color: var(--text);">Información al: ${targetLabel}</div>
+            <div style="display:flex; align-items:center; gap:10px">
+              <span style="font-size:10px; color:var(--text3); font-weight:500; text-transform:uppercase; letter-spacing:.08em;">Último balance: ${absoluteLatestLabel}</span>
+              <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
+                ${periodOptions}
+              </select>
+            </div>
           </div>
           <div class="ratio-chips" id="ratios-${e.id}">${ratioHtml}</div>
         </div>
