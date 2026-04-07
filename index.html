@@ -696,7 +696,7 @@ function renderOverview() {
   });
 
   const sorted = periodData.sort((a, b) => b.score - a.score);
-  const labels = sorted.map(e => e.nombre.length > 18 ? e.nombre.substring(0, 16) + '…' : e.nombre);
+  const labels = sorted.map(e => e.nombre);
   const scores = sorted.map(e => e.score);
   const colors = sorted.map(e => colorHex(estadoToColor(e.estado)));
 
@@ -736,7 +736,12 @@ function renderOverview() {
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 40 },
+          ticks: { 
+            color: '#555a6a', 
+            font: { size: 10, weight: 'bold' }, 
+            maxRotation: 45, 
+            minRotation: 45 
+          },
           border: { color: 'transparent' }
         }
       }
