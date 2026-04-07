@@ -934,7 +934,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     "YPF": "YPF Logo.png"
   };
 
-  const logoUrl = companyLogoMap[e.nombre] || "";
+  const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
 
   const logoCss = `
     .ccard-logo-head {
@@ -948,10 +948,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   const logoHeadHtml = logoUrl 
     ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo de ${e.nombre}" onerror="this.style.display='none'">` 
-    : "";
-    
-  const logoDetailHtml = logoUrl 
-    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo de ${e.nombre}" onerror="this.style.display='none'"></div>` 
     : "";
 
   let targetIdx = e.history.length - 1;
@@ -1054,7 +1050,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       <span class="chev ${isOpen ? 'open' : ''}">▼</span>
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
-      ${logoDetailHtml}
       <div class="detail-grid">
         <div>
           <div class="sub-label">Factores cualitativos</div>
