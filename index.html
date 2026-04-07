@@ -459,6 +459,7 @@ let allData = [];
 let overviewChart = null;
 let detailCharts = {};
 let expanded = {};
+let selectedCardPeriods = {};
 
 function setStatus(state, msg) {
   const dot = document.getElementById('status-dot');
@@ -505,14 +506,10 @@ function fmtDate(v) {
 function fmtVal(v, key = '') {
   if (v === '' || v === null || v === undefined) return '—';
   const s = String(v);
-  
   if (s.toLowerCase().includes('no mkt') || s.toLowerCase().includes('no market')) return '—';
-
   const cleanStr = s.replace(',', '.');
-
   if (!isNaN(parseFloat(cleanStr))) {
     const num = parseFloat(cleanStr);
-
     if (key === 'Net CapEx') {
       const fmt = new Intl.NumberFormat('es-AR', {
         style: 'currency',
@@ -520,24 +517,20 @@ function fmtVal(v, key = '') {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(num);
-      
       if (num < 0) return `<span style="color: var(--red);">${fmt}</span>`;
       return fmt;
     }
-
     if (key === 'Márgen' || key === 'Crecimiento Ventas') {
       return (num * 100).toFixed(0) + '%';
     }
-
     if (key.includes('Mkt. Cap')) {
       return num.toFixed(2);
     }
-
     return parseFloat(num.toFixed(3)).toString();
   }
-
   return s;
 }
+
 function estadoToColor(estado) {
   const s = String(estado || '').trim().toLowerCase();
   if (s === 'recomendable') return 'g';
@@ -559,38 +552,31 @@ async function reloadData() {
   document.getElementById('loading-msg').style.display = 'block';
   document.getElementById('cards').innerHTML = '';
   document.getElementById('err-bar').style.display = 'none';
-
   try {
     const [empresas, ratiosGen, ratiosBanco] = await Promise.all([
       fetchSheet('Empresa'),
       fetchSheet('Ratios No Bancos'),
       fetchSheet('Ratios Bancos')
     ]);
-
     const bancosIds = new Set(
       empresas.filter(e => String(e['Sector'] || '').toLowerCase().includes('banco'))
               .map(e => String(e['Empresa ID']))
     );
-
     allData = empresas.map(emp => {
       const id = String(emp['Empresa ID']);
       const esBanco = bancosIds.has(id);
       const src = esBanco ? ratiosBanco : ratiosGen;
       const ratios = src.filter(r => String(r['Empresa ID']) === id);
-
       ratios.sort((a, b) => {
         const da = parseDate(a['Trimestre']), db = parseDate(b['Trimestre']);
         return (+da || 0) - (+db || 0);
       });
-
       const last = ratios[ratios.length - 1] || {};
       const score = parseFloat(last['Score']) || 0;
       const estado = String(last['Estado'] || '').trim();
-
       const ratioKeys = esBanco
         ? ['Resultado Final / Ventas','Mkt. Cap / Ventas','Mkt. Cap / PN','Márgen','Crecimiento Ventas','Apalancamiento','Cartera en Situación 2 a 5','Previsiones sobre Cartera Irregular Total','Total Cartera Irregular / Total Financiaciones','Efectivo y Depósito en Bancos / Activo','Absorción de Gastos de Ad. con Volúmen de Negocio','Rendimiento Anual del Patrimonio','Retorno sobre Activos','Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs']
         : ['Activo Corriente/ Pasivo Corriente','Deuda Financiera Total / EBITDA','Pasivo Total / Patrimonio Neto','Deuda Bancaria.CP / Patrimonio Neto','Resultado Final / Ventas','EBITDA / Intereses','EBITDA / PN + Related Companies (Pasivo)','PN / Bienes de Uso','Mkt. Cap / Resultado Final Normalizado','Deuda Financiera Neta + Mkt. Cap / EBITDA','EBITDA / Activos Totales','Mkt. Cap / Ventas','Mkt. Cap / PN','Net CapEx','Ratio Sector','Márgen','Crecimiento Ventas'];
-
       return {
         id,
         nombre: emp['Nombre'] || emp['Ticker'] || id,
@@ -605,7 +591,6 @@ async function reloadData() {
         }))
       };
     }).filter(e => e.ratios.length > 0);
-
     const sectors = [...new Set(allData.map(e => e.sector).filter(Boolean))].sort();
     const sel = document.getElementById('sec-filter');
     sel.innerHTML = '<option value="">Todos los sectores</option>';
@@ -614,19 +599,15 @@ async function reloadData() {
       o.value = s; o.textContent = s;
       sel.appendChild(o);
     });
-
     const bankPeriods = new Set();
     const genPeriods = new Set();
-
     allData.forEach(e => {
       e.history.forEach(h => {
         if (e.tipo === 'Banco') bankPeriods.add(h.label);
         else genPeriods.add(h.label);
       });
     });
-
     const commonPeriods = Array.from(bankPeriods).filter(p => genPeriods.has(p));
-
     const sortedCommon = commonPeriods.sort((a, b) => {
       const pa = a.split('/');
       const pb = b.split('/');
@@ -634,7 +615,6 @@ async function reloadData() {
       const db = new Date(`20${pb[2]}-${pb[1]}-${pb[0]}`);
       return db - da; 
     });
-
     const overviewSel = document.getElementById('overview-period-filter');
     if (overviewSel) {
       overviewSel.innerHTML = '';
@@ -643,12 +623,10 @@ async function reloadData() {
         o.value = p; o.textContent = 'Período: ' + p;
         overviewSel.appendChild(o);
       });
-      
       if (sortedCommon.length > 0) {
         document.getElementById('overview-period').textContent = 'Mostrando: ' + sortedCommon[0];
       }
     }
-
     setStatus('ok', 'Datos actualizados');
     document.getElementById('loading-msg').style.display = 'none';
     renderOverview();
@@ -664,17 +642,13 @@ async function reloadData() {
 
 function renderOverview() {
   const selectedPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
-
   if (selectedPeriod) {
     document.getElementById('overview-period').textContent = 'Mostrando: ' + selectedPeriod;
   }
-
   const periodData = [];
-
   allData.forEach(e => {
     let targetScore = null;
     let targetEstado = null;
-
     if (!selectedPeriod) {
       targetScore = e.score;
       targetEstado = e.estado;
@@ -685,7 +659,6 @@ function renderOverview() {
         targetEstado = h.estado;
       }
     }
-
     if (targetScore !== null) {
       periodData.push({
         nombre: e.nombre,
@@ -694,14 +667,11 @@ function renderOverview() {
       });
     }
   });
-
   const sorted = periodData.sort((a, b) => b.score - a.score);
   const labels = sorted.map(e => e.nombre);
   const scores = sorted.map(e => e.score);
   const colors = sorted.map(e => colorHex(estadoToColor(e.estado)));
-
   if (overviewChart) overviewChart.destroy();
-  
   overviewChart = new Chart(document.getElementById('overview-chart'), {
     type: 'bar',
     data: {
@@ -755,7 +725,6 @@ function getFiltered() {
   const tipo = document.getElementById('type-filter').value;
   const sort = document.getElementById('sort-filter').value;
   const est = document.getElementById('estado-filter').value;
-
   let list = allData.filter(e => {
     const mq = !q || e.nombre.toLowerCase().includes(q) || e.ticker.toLowerCase().includes(q) || e.sector.toLowerCase().includes(q);
     const ms = !sec || e.sector === sec;
@@ -763,113 +732,117 @@ function getFiltered() {
     const me = !est || getColor(e) === est; 
     return mq && ms && mt && me;
   });
-
   if (sort === 'score-desc') list.sort((a, b) => b.score - a.score);
   else if (sort === 'score-asc') list.sort((a, b) => a.score - b.score);
   else list.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
   return list;
+}
+
+function createCardHTML(e, selectedPeriod, isOpen) {
+  let targetIdx = e.history.length - 1;
+  if (selectedPeriod !== '') {
+    const foundIdx = e.history.findIndex(x => x.label === selectedPeriod);
+    if (foundIdx !== -1) targetIdx = foundIdx;
+  }
+  const currentHist = e.history[targetIdx] || {};
+  const targetScore = currentHist.score || 0;
+  const targetEstado = currentHist.estado || '—';
+  const targetLabel = currentHist.label || '—';
+  const prevHist = targetIdx > 0 ? e.history[targetIdx - 1] : null;
+  const prevScore = prevHist ? prevHist.score : null;
+  const delta = prevScore !== null ? Math.round(targetScore - prevScore) : null;
+  const deltaHtml = delta !== null
+    ? `<span style="font-size:11px;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'};">${delta >= 0 ? '+' : ''}${delta}</span>`
+    : '';
+  const col = estadoToColor(targetEstado);
+  const hex = colorHex(col);
+  const pct = Math.round((targetScore / 1000) * 100);
+  let targetData = {};
+  const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel);
+  if (targetRatio) targetData = targetRatio;
+  const periodOptions = [...e.history].reverse().map(h => {
+    const selected = h.label === targetLabel ? 'selected' : '';
+    return `<option value="${h.label}" ${selected}>${h.label}</option>`;
+  }).join('');
+  const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
+  const qualiHtml = qualiKeys.map(k => {
+    const v = targetData[k] || '—';
+    return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
+  }).join('');
+  const ratioHtml = e.ratioKeys.map(k => {
+    const raw = targetData[k];
+    const v = fmtVal(raw, k);
+    const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
+    return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
+  }).join('');
+  return `
+  <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
+    <div class="ccard-head">
+      <div class="score-ring ring-${col}">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
+          <circle cx="26" cy="26" r="22" fill="none" stroke="${hex}" stroke-width="3"
+            stroke-dasharray="${Math.round(2*Math.PI*22*targetScore/1000)} ${Math.round(2*Math.PI*22)}"
+            stroke-linecap="round"/>
+        </svg>
+        <span>${Math.round(targetScore)}</span>
+      </div>
+      <div class="ccard-meta">
+        <div class="ccard-name">${e.nombre}<span class="sector-badge">${e.sector}</span></div>
+        <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Último balance: ${targetLabel} ${deltaHtml}</div>
+        <div class="score-strip" style="margin-top:6px">
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
+          <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${targetScore > 0 ? (targetScore/10).toFixed(0)+'%' : '—'}</span>
+        </div>
+      </div>
+      <span class="pill ${e.tipo === 'Banco' ? 'pill-banco' : 'pill-gen'}">${e.tipo === 'Banco' ? 'Banco' : 'No banco'}</span>
+      <span class="pill" style="background:${hex}22;color:${hex};border:1px solid ${hex}44">${targetEstado}</span>
+      <div class="traffic-light">
+        <div class="tl-dot ${col === 'r' ? 'on-r' : ''}"></div>
+        <div class="tl-dot ${col === 'y' ? 'on-y' : ''}"></div>
+        <div class="tl-dot ${col === 'g' ? 'on-g' : ''}"></div>
+      </div>
+      <span class="chev ${isOpen ? 'open' : ''}">▼</span>
+    </div>
+    <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
+      <div class="detail-grid">
+        <div>
+          <div class="sub-label">Factores cualitativos</div>
+          <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
+            <div class="sub-label" style="margin-bottom:0">Ratios — período</div>
+            <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
+              ${periodOptions}
+            </select>
+          </div>
+          <div class="ratio-chips" id="ratios-${e.id}">${ratioHtml}</div>
+        </div>
+      </div>
+      <div class="history-section">
+        <div class="sub-label">Historial de score</div>
+        <div class="history-chart-wrap"><canvas id="hchart-${e.id}"></canvas></div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function renderCards() {
   const filtered = getFiltered();
   document.getElementById('count-label').textContent = filtered.length + ' empresa' + (filtered.length !== 1 ? 's' : '');
-
   Object.keys(detailCharts).forEach(k => { try { detailCharts[k].destroy(); } catch (e) {} });
   detailCharts = {};
-
   const container = document.getElementById('cards');
   if (!filtered.length) {
     container.innerHTML = '<div class="state-msg">No se encontraron empresas.</div>';
     return;
   }
-
   container.innerHTML = filtered.map(e => {
-    const col = getColor(e);
-    const hex = colorHex(col);
-    const pct = Math.round((e.score / 1000) * 100);
     const isOpen = !!expanded[e.id];
-    
-    const lastLabel = e.history.length ? e.history[e.history.length - 1].label : '—';
-    const prevScore = e.history.length > 1 ? e.history[e.history.length - 2].score : null;
-    const delta = prevScore !== null ? Math.round(e.score - prevScore) : null;
-    const deltaHtml = delta !== null
-      ? `<span style="font-size:11px;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'};">${delta >= 0 ? '+' : ''}${delta}</span>`
-      : '';
-    const estadoLabel = e.estado || '—';
-
-    const periodOptions = [...e.history].reverse().map(h => {
-      return `<option value="${h.label}">${h.label}</option>`;
-    }).join('');
-
-    const targetData = e.last;
-
-    const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
-    const qualiHtml = qualiKeys.map(k => {
-      const v = targetData[k] || '—';
-      return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
-    }).join('');
-
-    const ratioHtml = e.ratioKeys.map(k => {
-      const raw = targetData[k];
-      const v = fmtVal(raw, k); 
-      const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
-      return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
-    }).join('');
-
-    return `
-<div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
-  <div class="ccard-head">
-    <div class="score-ring ring-${col}">
-      <svg width="52" height="52" viewBox="0 0 52 52">
-        <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
-        <circle cx="26" cy="26" r="22" fill="none" stroke="${hex}" stroke-width="3"
-          stroke-dasharray="${Math.round(2*Math.PI*22*e.score/1000)} ${Math.round(2*Math.PI*22)}"
-          stroke-linecap="round"/>
-      </svg>
-      <span>${Math.round(e.score)}</span>
-    </div>
-    <div class="ccard-meta">
-      <div class="ccard-name">${e.nombre}<span class="sector-badge">${e.sector}</span></div>
-      <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Último balance: ${lastLabel} ${deltaHtml}</div>
-      <div class="score-strip" style="margin-top:6px">
-        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
-        <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${e.score > 0 ? (e.score/10).toFixed(0)+'%' : '—'}</span>
-      </div>
-    </div>
-    <span class="pill ${e.tipo === 'Banco' ? 'pill-banco' : 'pill-gen'}">${e.tipo === 'Banco' ? 'Banco' : 'No banco'}</span>
-    <span class="pill" style="background:${hex}22;color:${hex};border:1px solid ${hex}44">${estadoLabel}</span>
-    <div class="traffic-light">
-      <div class="tl-dot ${col === 'r' ? 'on-r' : ''}"></div>
-      <div class="tl-dot ${col === 'y' ? 'on-y' : ''}"></div>
-      <div class="tl-dot ${col === 'g' ? 'on-g' : ''}"></div>
-    </div>
-    <span class="chev ${isOpen ? 'open' : ''}">▼</span>
-  </div>
-  <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
-    <div class="detail-grid">
-      <div>
-        <div class="sub-label">Factores cualitativos</div>
-        <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
-      </div>
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-          <div class="sub-label" style="margin-bottom:0">Ratios — período</div>
-          <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
-            ${periodOptions}
-          </select>
-        </div>
-        <div class="ratio-chips" id="ratios-${e.id}">${ratioHtml}</div>
-      </div>
-    </div>
-    <div class="history-section">
-      <div class="sub-label">Historial de score</div>
-      <div class="history-chart-wrap"><canvas id="hchart-${e.id}"></canvas></div>
-    </div>
-  </div>
-</div>`;
+    const currentPeriod = selectedCardPeriods[e.id] || '';
+    return createCardHTML(e, currentPeriod, isOpen);
   }).join('');
-
   filtered.forEach(e => {
     if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
   });
@@ -879,25 +852,14 @@ function updateCardPeriod(event, id, selectedPeriod) {
   event.stopPropagation();
   const e = allData.find(x => x.id === id);
   if (!e) return;
-
-  const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === selectedPeriod);
-  const targetData = targetRatio || {};
-
-  const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
-  const qualiHtml = qualiKeys.map(k => {
-    const v = targetData[k] || '—';
-    return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
-  }).join('');
-
-  const ratioHtml = e.ratioKeys.map(k => {
-    const raw = targetData[k];
-    const v = fmtVal(raw, k); 
-    const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
-    return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
-  }).join('');
-
-  document.getElementById(`quali-${id}`).innerHTML = qualiHtml;
-  document.getElementById(`ratios-${id}`).innerHTML = ratioHtml;
+  selectedCardPeriods[id] = selectedPeriod;
+  const cardEl = document.getElementById('card-' + id);
+  if (cardEl) {
+    cardEl.outerHTML = createCardHTML(e, selectedPeriod, !!expanded[id]);
+    if (expanded[id]) {
+      setTimeout(() => drawDetailChart(e), 10);
+    }
+  }
 }
 
 function toggleCard(event, id) {
@@ -923,20 +885,16 @@ function drawDetailChart(e) {
   const canvas = document.getElementById('hchart-' + e.id);
   if (!canvas) return;
   if (detailCharts[e.id]) detailCharts[e.id].destroy();
-
   const col = getColor(e);
   const hex = colorHex(col);
-
   const pointColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
   const hasNegative = e.history.some(h => h.score < 0);
-
   const yScaleConfig = {
     max: 1000,
     grid: { color: 'rgba(255,255,255,0.04)' },
     ticks: { color: '#555a6a', font: { size: 10 }, stepSize: 250 },
     border: { color: 'transparent' }
   };
-
   if (!hasNegative) {
     yScaleConfig.min = 0;
     yScaleConfig.beginAtZero = true;
@@ -944,26 +902,21 @@ function drawDetailChart(e) {
     delete yScaleConfig.min;
     yScaleConfig.beginAtZero = false;
   }
-
   const allLabelsPlugin = {
     id: 'allLabels',
     afterDatasetsDraw(chart) {
       const { ctx } = chart;
       const meta = chart.getDatasetMeta(0);
       const dataset = chart.data.datasets[0].data;
-
       ctx.save();
       ctx.font = '600 11px "DM Sans", sans-serif';
       ctx.fillStyle = '#e8eaf0';
       ctx.textAlign = 'center';
-
       dataset.forEach((val, i) => {
         const point = meta.data[i];
         if (!point) return;
-        
         const x = point.x;
         let y = point.y;
-
         if (val >= 0) {
           ctx.textBaseline = 'bottom';
           y -= 8;
@@ -973,11 +926,9 @@ function drawDetailChart(e) {
         }
         ctx.fillText(Math.round(val), x, y);
       });
-
       ctx.restore();
     }
   };
-
   detailCharts[e.id] = new Chart(canvas, {
     type: 'line',
     data: {
