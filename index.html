@@ -411,8 +411,8 @@ body {
         <h2>Comparativa General</h2>
         <span id="overview-period">—</span>
       </div>
-      <select id="overview-period-filter" onchange="renderOverview()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
-      </select>
+<select id="overview-period-filter" onchange="onGlobalPeriodChange()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
+</select>
     </div>
     <div class="chart-wrap">
       <canvas id="overview-chart"></canvas>
@@ -719,22 +719,42 @@ function renderOverview() {
   });
 }
 
+function onGlobalPeriodChange() {
+  selectedCardPeriods = {};
+  renderOverview();
+  renderCards();
+}
+
 function getFiltered() {
   const q = (document.getElementById('search').value || '').toLowerCase();
   const sec = document.getElementById('sec-filter').value;
   const tipo = document.getElementById('type-filter').value;
   const sort = document.getElementById('sort-filter').value;
   const est = document.getElementById('estado-filter').value;
+  const globalPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
+
+  const getHistAtPeriod = (emp, period) => {
+    if (!period) return { score: emp.score, estado: emp.estado };
+    const h = emp.history.find(x => x.label === period);
+    return h || { score: emp.score, estado: emp.estado };
+  };
+
   let list = allData.filter(e => {
     const mq = !q || e.nombre.toLowerCase().includes(q) || e.ticker.toLowerCase().includes(q) || e.sector.toLowerCase().includes(q);
     const ms = !sec || e.sector === sec;
     const mt = !tipo || e.tipo === tipo;
-    const me = !est || getColor(e) === est; 
+
+    const hist = getHistAtPeriod(e, globalPeriod);
+    const col = estadoToColor(hist.estado);
+    const me = !est || col === est;
+
     return mq && ms && mt && me;
   });
-  if (sort === 'score-desc') list.sort((a, b) => b.score - a.score);
-  else if (sort === 'score-asc') list.sort((a, b) => a.score - b.score);
+
+  if (sort === 'score-desc') list.sort((a, b) => getHistAtPeriod(b, globalPeriod).score - getHistAtPeriod(a, globalPeriod).score);
+  else if (sort === 'score-asc') list.sort((a, b) => getHistAtPeriod(a, globalPeriod).score - getHistAtPeriod(b, globalPeriod).score);
   else list.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
   return list;
 }
 
@@ -830,19 +850,25 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
 function renderCards() {
   const filtered = getFiltered();
+  const globalPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
+
   document.getElementById('count-label').textContent = filtered.length + ' empresa' + (filtered.length !== 1 ? 's' : '');
+
   Object.keys(detailCharts).forEach(k => { try { detailCharts[k].destroy(); } catch (e) {} });
   detailCharts = {};
+
   const container = document.getElementById('cards');
   if (!filtered.length) {
     container.innerHTML = '<div class="state-msg">No se encontraron empresas.</div>';
     return;
   }
+
   container.innerHTML = filtered.map(e => {
     const isOpen = !!expanded[e.id];
-    const currentPeriod = selectedCardPeriods[e.id] || '';
+    const currentPeriod = selectedCardPeriods[e.id] || globalPeriod;
     return createCardHTML(e, currentPeriod, isOpen);
   }).join('');
+
   filtered.forEach(e => {
     if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
   });
