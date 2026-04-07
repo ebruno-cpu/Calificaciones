@@ -418,6 +418,78 @@ body {
   height: 38px;
 }
 
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border2);
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 600;
+  font-style: normal;
+  transition: all 0.2s ease;
+}
+
+.tooltip-wrapper:hover .tooltip-icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tooltip-text {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--bg3);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  text-align: center;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+  pointer-events: none;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tooltip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--border) transparent transparent transparent;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
 </style>
 </head>
 <body>
@@ -878,21 +950,46 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   let targetData = {};
   const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel);
   if (targetRatio) targetData = targetRatio;
+  
   const periodOptions = [...e.history].reverse().map(h => {
     const selected = h.label === targetLabel ? 'selected' : '';
     return `<option value="${h.label}" ${selected}>${h.label}</option>`;
   }).join('');
+  
   const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
   const qualiHtml = qualiKeys.map(k => {
     const v = targetData[k] || '—';
     return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
   }).join('');
+
+  const tooltipsDef = {
+    'Absorción de Gastos de Ad. con Volúmen de Negocio': 'Mide qué porcentaje de los ingresos se consume en gastos administrativos.',
+    'Rendimiento Anual del Patrimonio': 'También conocido como ROE (Return on Equity).',
+    'Retorno sobre Activos': 'También conocido como ROA (Return on Assets).',
+    'EBITDA / Intereses': 'Cobertura de intereses. Capacidad de pagar deuda con el resultado operativo.',
+    'Net CapEx': 'Inversiones en bienes de capital netas de depreciación.',
+    'Apalancamiento': 'Nivel de deuda en relación al capital propio.'
+  };
+
   const ratioHtml = e.ratioKeys.map(k => {
     const raw = targetData[k];
     const v = fmtVal(raw, k);
     const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
-    return `<div class="rchip"><div class="rchip-label">${k}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
+    
+    let labelHtml = k;
+    if (tooltipsDef[k]) {
+      labelHtml = `
+        <div class="tooltip-wrapper">
+          ${k}
+          <i class="tooltip-icon">i</i>
+          <span class="tooltip-text">${tooltipsDef[k]}</span>
+        </div>
+      `;
+    }
+
+    return `<div class="rchip"><div class="rchip-label">${labelHtml}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
   }).join('');
+
   return `
   <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
