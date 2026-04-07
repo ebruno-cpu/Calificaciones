@@ -405,10 +405,14 @@ body {
     <span style="margin-left:auto;font-size:11px;color:var(--text3)">Segmentación según Mediana Histórica del Sector y de la propia Empresa</span>
   </div>
 
-  <div class="overview-card">
-    <div class="section-head">
-      <h2>Comparativa general</h2>
-      <span id="overview-period">—</span>
+<div class="overview-card">
+    <div class="section-head" style="justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <h2>Comparativa general</h2>
+        <span id="overview-period">—</span>
+      </div>
+      <select id="overview-period-filter" onchange="renderOverview()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
+      </select>
     </div>
     <div class="chart-wrap">
       <canvas id="overview-chart"></canvas>
@@ -611,9 +615,38 @@ async function reloadData() {
       sel.appendChild(o);
     });
 
-    const allPeriods = allData.flatMap(e => e.history.map(h => h.label));
-    if (allPeriods.length) {
-      document.getElementById('overview-period').textContent = 'Último período: ' + allPeriods[allPeriods.length - 1];
+    const bankPeriods = new Set();
+    const genPeriods = new Set();
+
+    allData.forEach(e => {
+      e.history.forEach(h => {
+        if (e.tipo === 'Banco') bankPeriods.add(h.label);
+        else genPeriods.add(h.label);
+      });
+    });
+
+    const commonPeriods = Array.from(bankPeriods).filter(p => genPeriods.has(p));
+
+    const sortedCommon = commonPeriods.sort((a, b) => {
+      const pa = a.split('/');
+      const pb = b.split('/');
+      const da = new Date(`20${pa[2]}-${pa[1]}-${pa[0]}`);
+      const db = new Date(`20${pb[2]}-${pb[1]}-${pb[0]}`);
+      return db - da; 
+    });
+
+    const overviewSel = document.getElementById('overview-period-filter');
+    if (overviewSel) {
+      overviewSel.innerHTML = '';
+      sortedCommon.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p; o.textContent = 'Período: ' + p;
+        overviewSel.appendChild(o);
+      });
+      
+      if (sortedCommon.length > 0) {
+        document.getElementById('overview-period').textContent = 'Mostrando: ' + sortedCommon[0];
+      }
     }
 
     setStatus('ok', 'Datos actualizados');
@@ -630,13 +663,45 @@ async function reloadData() {
 }
 
 function renderOverview() {
-  const sorted = [...allData].sort((a, b) => b.score - a.score);
+  const selectedPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
+
+  if (selectedPeriod) {
+    document.getElementById('overview-period').textContent = 'Mostrando: ' + selectedPeriod;
+  }
+
+  const periodData = [];
+
+  allData.forEach(e => {
+    let targetScore = null;
+    let targetEstado = null;
+
+    if (!selectedPeriod) {
+      targetScore = e.score;
+      targetEstado = e.estado;
+    } else {
+      const h = e.history.find(x => x.label === selectedPeriod);
+      if (h) {
+        targetScore = h.score;
+        targetEstado = h.estado;
+      }
+    }
+
+    if (targetScore !== null) {
+      periodData.push({
+        nombre: e.nombre,
+        score: targetScore,
+        estado: targetEstado
+      });
+    }
+  });
+
+  const sorted = periodData.sort((a, b) => b.score - a.score);
   const labels = sorted.map(e => e.nombre.length > 18 ? e.nombre.substring(0, 16) + '…' : e.nombre);
   const scores = sorted.map(e => e.score);
-  const colors = sorted.map(e => colorHex(getColor(e)));
+  const colors = sorted.map(e => colorHex(estadoToColor(e.estado)));
 
   if (overviewChart) overviewChart.destroy();
-  const isDark = true;
+  
   overviewChart = new Chart(document.getElementById('overview-chart'), {
     type: 'bar',
     data: {
