@@ -196,6 +196,25 @@ body {
   padding: 1rem 1.25rem;
 }
 
+.score-ring {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+.score-ring svg {
+  position: absolute; top: 0; left: 0;
+  transform: rotate(-90deg);
+}
+.score-ring span { position: relative; z-index: 1; }
+.ring-g { color: var(--green); }
+.ring-y { color: var(--yellow); }
+.ring-r { color: var(--red); }
+
 .ccard-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ccard-name {
   font-family: 'Syne', sans-serif;
@@ -911,34 +930,84 @@ function getFiltered() {
 
 function createCardHTML(e, selectedPeriod, isOpen) {
   const companyLogoMap = {
+    "Aeropuertos Argentina 2000 S.A.": "AA 2000 Logo.png",
+    "AA 2000": "AA 2000 Logo.png",
+    "Aluar Aluminio Argentino S.A.I.C.": "Aluar Logo.png",
+    "Aluar": "Aluar Logo.png",
+    "Arcor SAIC": "Arcor Logo.png",
+    "Arcor": "Arcor Logo.png",
+    "Banco de Servicios y Transacciones S.A.U.": "Banco BST Logo.png",
+    "Banco BST": "Banco BST Logo.png",
+    "Banco Comafi S.A.": "Banco Comafi Logo.png",
+    "Banco Comafi": "Banco Comafi Logo.png",
+    "Banco de Valores S.A.": "Banco de Valores Logo.png",
+    "Banco De Valores": "Banco de Valores Logo.png",
+    "Banco de Galicia y Buenos Aires S.A.U.": "Banco Galicia Logo.png",
+    "Banco Galicia": "Banco Galicia Logo.png",
+    "Banco Hipotecario S.A.": "Banco Hipotecario Logo.png",
+    "Banco Hipotecario": "Banco Hipotecario Logo.png",
+    "Banco Macro": "Banco Macro Logo.png",
+    "Banco Supervielle S.A": "Banco Supervielle Logo.png",
+    "Banco Supervielle": "Banco Supervielle Logo.png",
+    "Banco BBVA Argentina S.A.": "BBVA Logo.png",
+    "BBVA": "BBVA Logo.png",
+    "Capex S.A.": "Capex Logo.png",
+    "Capex": "Capex Logo.png",
     "Central Puerto S.A.": "CEPU Logo.png",
     "Central Puerto": "CEPU Logo.png",
+    "CEPU": "CEPU Logo.png",
+    "Compañia General De Combustibles S.A.": "CGC Logo.png",
+    "CGC": "CGC Logo.png",
     "Cresud S.A.C.I.F. y A.": "Cresud Logo.png",
     "Cresud": "Cresud Logo.png",
     "Edenor S.A.": "Edenor Logo.png",
     "Edenor": "Edenor Logo.png",
+    "Genneia S.A.": "Genneia Logo.png",
+    "Genneia": "Genneia Logo.png",
     "IRSA Inversiones y Representaciones S.A.": "IRSA Logo.png",
     "IRSA": "IRSA Logo.png",
+    "John Deere Credit Compania Financiera S.A.": "John Deere Logo.png",
+    "John Deere": "John Deere Logo.png",
+    "Laboratorios Richmnd S.A.C.I.F.": "Laboratorio Richmond Logo.png",
+    "Laboratorios Richmond": "Laboratorio Richmond Logo.png",
     "Loma Negra C.I.A.S.A.": "LOMA Logo.png",
     "Loma Negra": "LOMA Logo.png",
     "Pampa Energía S.A.": "Pampa Logo.png",
     "Pampa Energía": "Pampa Logo.png",
+    "Pan American Energy S.L.": "Pan American Energy Logo.png",
+    "Pan American Energy": "Pan American Energy Logo.png",
+    "Pecom Servicios Energía S.A.U": "Pecom Logo.png",
+    "Pecom": "Pecom Logo.png",
+    "Petrolera Aconcagua Energia S.A.": "Petrolera Aconcagua Logo.png",
+    "Petrolera Aconcagua": "Petrolera Aconcagua Logo.png",
+    "Plaza Logistica S.R.L.": "Plaza Logistica Logo.png",
+    "Plaza Logistica": "Plaza Logistica Logo.png",
+    "Pluspetrol S.A.": "Pluspetrol Logo.png",
+    "Pluspetrol": "Pluspetrol Logo.png",
+    "S.A. San Miguel A.G.I.C.I. y F.": "San Miguel Logo.png",
+    "San Miguel": "San Miguel Logo.png",
+    "Tarjeta Naranja S.A.U.": "Tarjeta Naranja Logo.png",
+    "Tarjeta Naranja": "Tarjeta Naranja Logo.png",
+    "Tecpetrol S.A.": "Tecpetrol Logo.png",
+    "Tecpetrol": "Tecpetrol Logo.png",
+    "Telecom Argentina S.A.": "Telecom Logo.png",
+    "Telecom": "Telecom Logo.png",
     "Transportadora de Gas Del Sur S.A.": "TGS Logo.png",
     "Transportadora de Gas Del Sur": "TGS Logo.png",
     "TGS": "TGS Logo.png",
-    "Telecom Argentina S.A.": "Telecom Logo.png",
-    "Telecom": "Telecom Logo.png",
     "Vista Energy Argentina S.A.U.": "Vista Logo.png",
     "Vista Energy": "Vista Logo.png",
     "YPF S.A.": "YPF Logo.png",
-    "YPF": "YPF Logo.png"
+    "YPF": "YPF Logo.png",
+    "YPF Energía Eléctrica S.A.": "YPF Luz Logo.png",
+    "YPF Luz": "YPF Luz Logo.png"
   };
 
   const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
 
   const logoCss = `
     .ccard-logo-head {
-      width: 69px; height: 69px;
+      width: 52px; height: 52px;
       border-radius: var(--radius-sm); object-fit: contain;
       flex-shrink: 0;
       background: #ffffff; padding: 4px; box-sizing: border-box;
