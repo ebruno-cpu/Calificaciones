@@ -972,12 +972,17 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
 
+  const logoCss = `
+    .ccard-logo-head {
+      width: 52px; height: 52px;
+      border-radius: 50%; object-fit: contain;
+      background: #ffffff; padding: 4px;
+      flex-shrink: 0; box-sizing: border-box;
+    }
+  `;
+
   const logoHeadHtml = logoUrl 
     ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo" onerror="this.style.display='none'">` 
-    : "";
-    
-  const logoDetailHtml = logoUrl 
-    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo" onerror="this.style.display='none'"></div>` 
     : "";
 
   let targetIdx = e.history.length - 1;
@@ -1043,6 +1048,8 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   }).join('');
 
   return `
+  <style>${logoCss}</style>
+
   <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
       <div class="score-ring ring-${col}">
@@ -1054,9 +1061,9 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         </svg>
         <span>${Math.round(targetScore)}</span>
       </div>
+      ${logoHeadHtml}
       <div class="ccard-meta">
         <div class="ccard-name">
-          ${logoHeadHtml}
           ${e.nombre}
           <span class="sector-badge">${e.sector}</span>
         </div>
@@ -1076,7 +1083,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       <span class="chev ${isOpen ? 'open' : ''}">▼</span>
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
-      ${logoDetailHtml}
       <div class="detail-grid">
         <div>
           <div class="sub-label">Factores cualitativos</div>
