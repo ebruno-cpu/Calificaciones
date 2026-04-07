@@ -196,25 +196,6 @@ body {
   padding: 1rem 1.25rem;
 }
 
-.score-ring {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-  position: relative;
-}
-.score-ring svg {
-  position: absolute; top: 0; left: 0;
-  transform: rotate(-90deg);
-}
-.score-ring span { position: relative; z-index: 1; }
-.ring-g { color: var(--green); }
-.ring-y { color: var(--yellow); }
-.ring-r { color: var(--red); }
-
 .ccard-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ccard-name {
   font-family: 'Syne', sans-serif;
@@ -491,23 +472,6 @@ body {
   transform: translateX(-50%) translateY(-4px);
 }
 
-.ccard-logo-head {
-  width: 32px; height: 32px;
-  border-radius: 4px; object-fit: contain;
-  flex-shrink: 0;
-  background: #ffffff;
-  padding: 2px;
-}
-.ccard-logo-detail-wrap {
-  display: flex; justify-content: center; align-items: center;
-  margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);
-  padding-bottom: 1.5rem;
-}
-.ccard-logo-detail {
-  max-width: 120px; max-height: 80px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
 </style>
 </head>
 <body>
@@ -970,19 +934,24 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     "YPF": "YPF Logo.png"
   };
 
-  const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
+  const logoUrl = companyLogoMap[e.nombre] || "";
 
   const logoCss = `
     .ccard-logo-head {
       width: 52px; height: 52px;
-      border-radius: 50%; object-fit: contain;
-      background: #ffffff; padding: 4px;
-      flex-shrink: 0; box-sizing: border-box;
+      border-radius: var(--radius-sm); object-fit: contain;
+      flex-shrink: 0;
+      background: #ffffff; padding: 4px; box-sizing: border-box;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
   `;
 
   const logoHeadHtml = logoUrl 
-    ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo" onerror="this.style.display='none'">` 
+    ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo de ${e.nombre}" onerror="this.style.display='none'">` 
+    : "";
+    
+  const logoDetailHtml = logoUrl 
+    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo de ${e.nombre}" onerror="this.style.display='none'"></div>` 
     : "";
 
   let targetIdx = e.history.length - 1;
@@ -1052,22 +1021,24 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
-      <div class="score-ring ring-${col}">
-        <svg width="52" height="52" viewBox="0 0 52 52">
-          <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
-          <circle cx="26" cy="26" r="22" fill="none" stroke="${hex}" stroke-width="3"
-            stroke-dasharray="${Math.round(2*Math.PI*22*targetScore/1000)} ${Math.round(2*Math.PI*22)}"
-            stroke-linecap="round"/>
-        </svg>
-        <span>${Math.round(targetScore)}</span>
-      </div>
       ${logoHeadHtml}
+      
       <div class="ccard-meta">
         <div class="ccard-name">
           ${e.nombre}
           <span class="sector-badge">${e.sector}</span>
         </div>
-        <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Información al: ${targetLabel} ${deltaHtml}</div>
+        
+        <div class="ccard-sub" style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px; line-height: 1;">
+            <span class="score-number-display" style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; color: ${hex};">
+                ${Math.round(targetScore)}
+            </span>
+            ${deltaHtml}
+            <span class="date-info-display" style="font-size: 11px; color: var(--text3); margin-left: 6px;">
+              ${e.ticker ? e.ticker + ' · ' : ''}Información al: ${targetLabel}
+            </span>
+        </div>
+        
         <div class="score-strip" style="margin-top:6px">
           <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
           <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${targetScore > 0 ? (targetScore/10).toFixed(0)+'%' : '—'}</span>
@@ -1083,6 +1054,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       <span class="chev ${isOpen ? 'open' : ''}">▼</span>
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
+      ${logoDetailHtml}
       <div class="detail-grid">
         <div>
           <div class="sub-label">Factores cualitativos</div>
