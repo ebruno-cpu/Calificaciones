@@ -815,7 +815,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       </div>
       <div class="ccard-meta">
         <div class="ccard-name">${e.nombre}<span class="sector-badge">${e.sector}</span></div>
-        <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Último balance: ${targetLabel} ${deltaHtml}</div>
+        <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Información al: ${targetLabel} ${deltaHtml}</div>
         <div class="score-strip" style="margin-top:6px">
           <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
           <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${targetScore > 0 ? (targetScore/10).toFixed(0)+'%' : '—'}</span>
