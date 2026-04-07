@@ -928,6 +928,47 @@ function getFiltered() {
 }
 
 function createCardHTML(e, selectedPeriod, isOpen) {
+  const companyLogoMap = {
+    "Central Puerto S.A.": "CEPU Logo.png",
+    "Cresud S.A.C.I.F. y A.": "Cresud Logo.png",
+    "Edenor S.A.": "Edenor Logo.png",
+    "IRSA Inversiones y Representaciones S.A.": "IRSA Logo.png",
+    "Loma Negra C.I.A.S.A.": "LOMA Logo.png",
+    "Pampa Energía S.A.": "Pampa Logo.png",
+    "Transportadora de Gas Del Sur S.A.": "TGS Logo.png",
+    "Telecom Argentina S.A.": "Telecom Logo.png",
+    "Vista Energy Argentina S.A.U.": "Vista Logo.png",
+    "YPF S.A.": "YPF Logo.png"
+  };
+
+  const logoUrl = companyLogoMap[e.nombre] || "";
+
+  const logoCss = `
+    .ccard-logo-head {
+      width: 32px; height: 32px;
+      border-radius: 4px; object-fit: contain;
+      margin-right: -4px; flex-shrink: 0;
+    }
+    .ccard-logo-detail-wrap {
+      display: flex; justify-content: center; align-items: center;
+      margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+    .ccard-logo-detail {
+      max-width: 120px; max-height: 80px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+  `;
+
+  const logoHeadHtml = logoUrl 
+    ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo de ${e.nombre}" onerror="this.style.display='none'">` 
+    : "";
+    
+  const logoDetailHtml = logoUrl 
+    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo de ${e.nombre}" onerror="this.style.display='none'"></div>` 
+    : "";
+
   let targetIdx = e.history.length - 1;
   if (selectedPeriod !== '') {
     const foundIdx = e.history.findIndex(x => x.label === selectedPeriod);
@@ -950,12 +991,12 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   let targetData = {};
   const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel);
   if (targetRatio) targetData = targetRatio;
-  
+
   const periodOptions = [...e.history].reverse().map(h => {
     const selected = h.label === targetLabel ? 'selected' : '';
     return `<option value="${h.label}" ${selected}>${h.label}</option>`;
   }).join('');
-  
+
   const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
   const qualiHtml = qualiKeys.map(k => {
     const v = targetData[k] || '—';
@@ -975,7 +1016,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     const raw = targetData[k];
     const v = fmtVal(raw, k);
     const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
-    
+
     let labelHtml = k;
     if (tooltipsDef[k]) {
       labelHtml = `
@@ -991,6 +1032,8 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   }).join('');
 
   return `
+  <style>${logoCss}</style>
+
   <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
       <div class="score-ring ring-${col}">
@@ -1003,7 +1046,11 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         <span>${Math.round(targetScore)}</span>
       </div>
       <div class="ccard-meta">
-        <div class="ccard-name">${e.nombre}<span class="sector-badge">${e.sector}</span></div>
+        <div class="ccard-name">
+          ${logoHeadHtml}
+          ${e.nombre}
+          <span class="sector-badge">${e.sector}</span>
+        </div>
         <div class="ccard-sub">${e.ticker ? e.ticker + ' · ' : ''}Información al: ${targetLabel} ${deltaHtml}</div>
         <div class="score-strip" style="margin-top:6px">
           <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
@@ -1020,6 +1067,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       <span class="chev ${isOpen ? 'open' : ''}">▼</span>
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
+      ${logoDetailHtml}
       <div class="detail-grid">
         <div>
           <div class="sub-label">Factores cualitativos</div>
