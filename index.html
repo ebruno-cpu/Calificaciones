@@ -520,8 +520,8 @@ function fmtVal(v, key = '') {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(num);
-      if (num < 0) return `<span style="color: var(--red);">${fmt}</span>`;
-      return fmt;
+      if (num < 0) return `<span style="color: var(--red);">${fmt} M</span>`;
+      return `${fmt} M`;
     }
     if (key === 'Márgen' || key === 'Crecimiento Ventas') {
       return (num * 100).toFixed(0) + '%';
