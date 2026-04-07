@@ -215,13 +215,14 @@ body {
 .ring-y { color: var(--yellow); }
 .ring-r { color: var(--red); }
 
-.ccard-meta { flex: 1; min-width: 0; }
+.ccard-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ccard-name {
   font-family: 'Syne', sans-serif;
   font-weight: 600;
   font-size: 14px;
   letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 8px;
 }
 .ccard-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
 
@@ -490,6 +491,23 @@ body {
   transform: translateX(-50%) translateY(-4px);
 }
 
+.ccard-logo-head {
+  width: 32px; height: 32px;
+  border-radius: 4px; object-fit: contain;
+  flex-shrink: 0;
+  background: #ffffff;
+  padding: 2px;
+}
+.ccard-logo-detail-wrap {
+  display: flex; justify-content: center; align-items: center;
+  margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);
+  padding-bottom: 1.5rem;
+}
+.ccard-logo-detail {
+  max-width: 120px; max-height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
 </style>
 </head>
 <body>
@@ -930,43 +948,36 @@ function getFiltered() {
 function createCardHTML(e, selectedPeriod, isOpen) {
   const companyLogoMap = {
     "Central Puerto S.A.": "CEPU Logo.png",
+    "Central Puerto": "CEPU Logo.png",
     "Cresud S.A.C.I.F. y A.": "Cresud Logo.png",
+    "Cresud": "Cresud Logo.png",
     "Edenor S.A.": "Edenor Logo.png",
+    "Edenor": "Edenor Logo.png",
     "IRSA Inversiones y Representaciones S.A.": "IRSA Logo.png",
+    "IRSA": "IRSA Logo.png",
     "Loma Negra C.I.A.S.A.": "LOMA Logo.png",
+    "Loma Negra": "LOMA Logo.png",
     "Pampa Energía S.A.": "Pampa Logo.png",
+    "Pampa Energía": "Pampa Logo.png",
     "Transportadora de Gas Del Sur S.A.": "TGS Logo.png",
+    "Transportadora de Gas Del Sur": "TGS Logo.png",
+    "TGS": "TGS Logo.png",
     "Telecom Argentina S.A.": "Telecom Logo.png",
+    "Telecom": "Telecom Logo.png",
     "Vista Energy Argentina S.A.U.": "Vista Logo.png",
-    "YPF S.A.": "YPF Logo.png"
+    "Vista Energy": "Vista Logo.png",
+    "YPF S.A.": "YPF Logo.png",
+    "YPF": "YPF Logo.png"
   };
 
-  const logoUrl = companyLogoMap[e.nombre] || "";
-
-  const logoCss = `
-    .ccard-logo-head {
-      width: 32px; height: 32px;
-      border-radius: 4px; object-fit: contain;
-      margin-right: -4px; flex-shrink: 0;
-    }
-    .ccard-logo-detail-wrap {
-      display: flex; justify-content: center; align-items: center;
-      margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);
-      padding-bottom: 1.5rem;
-    }
-    .ccard-logo-detail {
-      max-width: 120px; max-height: 80px;
-      object-fit: contain;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-    }
-  `;
+  const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
 
   const logoHeadHtml = logoUrl 
-    ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo de ${e.nombre}" onerror="this.style.display='none'">` 
+    ? `<img src="${logoUrl}" class="ccard-logo-head" alt="Logo" onerror="this.style.display='none'">` 
     : "";
     
   const logoDetailHtml = logoUrl 
-    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo de ${e.nombre}" onerror="this.style.display='none'"></div>` 
+    ? `<div class="ccard-logo-detail-wrap"><img src="${logoUrl}" class="ccard-logo-detail" alt="Logo" onerror="this.style.display='none'"></div>` 
     : "";
 
   let targetIdx = e.history.length - 1;
@@ -1032,8 +1043,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   }).join('');
 
   return `
-  <style>${logoCss}</style>
-
   <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
       <div class="score-ring ring-${col}">
