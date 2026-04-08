@@ -196,25 +196,6 @@ body {
   padding: 1rem 1.25rem;
 }
 
-.score-ring {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-  position: relative;
-}
-.score-ring svg {
-  position: absolute; top: 0; left: 0;
-  transform: rotate(-90deg);
-}
-.score-ring span { position: relative; z-index: 1; }
-.ring-g { color: var(--green); }
-.ring-y { color: var(--yellow); }
-.ring-r { color: var(--red); }
-
 .ccard-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ccard-name {
   font-family: 'Syne', sans-serif;
@@ -491,6 +472,13 @@ body {
   transform: translateX(-50%) translateY(-4px);
 }
 
+/* =========================================================================
+   REGLA ESPECÍFICA PARA EL LOGO DE PLAZA LOGISTICA
+   Añadimos contraste a un logo blanco sobre fondo claro.
+   ========================================================================= */
+.ccard.is-plaza-logistica .ccard-logo-head {
+   background-color: #a0a0a0 !important; 
+}
 </style>
 </head>
 <body>
@@ -761,7 +749,7 @@ async function reloadData() {
     }).filter(e => e.ratios.length > 0);
     const sectors = [...new Set(allData.map(e => e.sector).filter(Boolean))].sort();
     const sel = document.getElementById('sec-filter');
-    sel.innerHTML = '<option value="">Todos los sectores</option>';
+    sel.innerHTML = '<option value="">Todos los sectors</option>';
     sectors.forEach(s => {
       const o = document.createElement('option');
       o.value = s; o.textContent = s;
@@ -1005,6 +993,8 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
 
+  const isPlazaLogistica = e.nombre.includes("Plaza Logistica") ? "is-plaza-logistica" : "";
+
   const logoCss = `
     .ccard-logo-head {
       width: 52px; height: 52px;
@@ -1084,7 +1074,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   return `
   <style>${logoCss}</style>
 
-  <div class="ccard border-${col}${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
+  <div class="ccard border-${col} ${isPlazaLogistica} ${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
       ${logoHeadHtml}
       
