@@ -481,6 +481,8 @@ body {
   padding: 3px !important;
 }
 
+.trend-icon { font-size: 10px; margin-left: 4px; vertical-align: middle; }
+
 </style>
 </head>
 <body>
@@ -572,28 +574,6 @@ body {
   </div>
 
 <div id="loading-msg" style="display: none;">
-    <div class="skeleton-card">
-      <div class="skeleton-item sk-ring"></div>
-      <div class="sk-meta">
-        <div class="skeleton-item sk-line-1"></div>
-        <div class="skeleton-item sk-line-2"></div>
-        <div class="skeleton-item sk-line-3"></div>
-      </div>
-      <div class="skeleton-item sk-pill"></div>
-      <div class="skeleton-item sk-pill"></div>
-      <div class="skeleton-item sk-tl"></div>
-    </div>
-    <div class="skeleton-card">
-      <div class="skeleton-item sk-ring"></div>
-      <div class="sk-meta">
-        <div class="skeleton-item sk-line-1"></div>
-        <div class="skeleton-item sk-line-2"></div>
-        <div class="skeleton-item sk-line-3"></div>
-      </div>
-      <div class="skeleton-item sk-pill"></div>
-      <div class="skeleton-item sk-pill"></div>
-      <div class="skeleton-item sk-tl"></div>
-    </div>
     <div class="skeleton-card">
       <div class="skeleton-item sk-ring"></div>
       <div class="sk-meta">
@@ -1025,7 +1005,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       background: #ffffff; padding: 4px; box-sizing: border-box;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
-    .trend-icon { font-size: 10px; margin-left: 4px; vertical-align: middle; }
   `;
 
   const logoHeadHtml = logoUrl 
@@ -1079,7 +1058,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     'Apalancamiento': 'Nivel de deuda en relación al capital propio.'
   };
 
-const ratioHtml = e.ratioKeys.map(k => {
+  const ratioHtml = e.ratioKeys.map(k => {
     const rawCurr = targetData[k];
     const v = fmtVal(rawCurr, k);
     const isNoMkt = String(rawCurr || '').toLowerCase().includes('no mkt') || String(rawCurr || '').toLowerCase().includes('no market');
@@ -1091,11 +1070,11 @@ const ratioHtml = e.ratioKeys.map(k => {
       'Resultado Final / Ventas',
       'Mkt. Cap / Ventas',
       'Márgen',
-      'Crecimiento Ventas',
-      'Mkt. Cap / PN'
+      'Crecimiento Ventas'
     ];
 
     let valPrev = NaN;
+    // Si es banco y es uno de los ratios longTerm, buscamos 3 periodos atrás
     if (e.tipo === 'Banco' && longTermRatios.includes(k)) {
       const prevLongIdx = targetIdx - 3;
       if (prevLongIdx >= 0) {
@@ -1104,6 +1083,7 @@ const ratioHtml = e.ratioKeys.map(k => {
         valPrev = parseFloat(String(prevLongData[k]).replace(',', '.'));
       }
     } else {
+      // Para No Bancos o ratios normales de Bancos, usamos el periodo anterior
       const valRawPrev = prevData[k];
       valPrev = parseFloat(String(valRawPrev).replace(',', '.'));
     }
