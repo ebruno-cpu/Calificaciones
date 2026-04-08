@@ -665,9 +665,15 @@ function fmtVal(v, key = '') {
   if (v === '' || v === null || v === undefined) return '—';
   const s = String(v);
   if (s.toLowerCase().includes('no mkt') || s.toLowerCase().includes('no market')) return '—';
+  
   const cleanStr = s.replace(',', '.');
   if (!isNaN(parseFloat(cleanStr))) {
     const num = parseFloat(cleanStr);
+
+    if (key === 'Resultado Final / Ventas') {
+      return (num * 100).toFixed(0) + '%';
+    }
+
     if (key === 'Net CapEx') {
       const fmt = new Intl.NumberFormat('es-AR', {
         style: 'currency',
@@ -678,12 +684,15 @@ function fmtVal(v, key = '') {
       if (num < 0) return `<span style="color: var(--red);">${fmt} M</span>`;
       return `${fmt} M`;
     }
+    
     if (key === 'Márgen' || key === 'Crecimiento Ventas') {
       return (num * 100).toFixed(0) + '%';
     }
+    
     if (key.includes('Mkt. Cap')) {
       return num.toFixed(2);
     }
+    
     return parseFloat(num.toFixed(3)).toString();
   }
   return s;
