@@ -1005,6 +1005,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       background: #ffffff; padding: 4px; box-sizing: border-box;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
+    .trend-icon { font-size: 10px; margin-left: 4px; vertical-align: middle; }
   `;
 
   const logoHeadHtml = logoUrl 
@@ -1070,20 +1071,39 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       'Resultado Final / Ventas',
       'Mkt. Cap / Ventas',
       'Márgen',
-      'Crecimiento Ventas'
+      'Crecimiento Ventas',
+      'Mkt. Cap / PN'
     ];
 
     let valPrev = NaN;
-    // Si es banco y es uno de los ratios longTerm, buscamos 3 periodos atrás
+    
     if (e.tipo === 'Banco' && longTermRatios.includes(k)) {
-      const prevLongIdx = targetIdx - 4;
-      if (prevLongIdx >= 0) {
+      let prevLongIdx = -1;
+      const isYearEnd = targetLabel.startsWith('31/12');
+
+      if (isYearEnd) {
+        // Para cierres de año, busca el 31/12 anterior
+        const currentYear = targetLabel.split('/')[2];
+        const prevYear = (parseInt(currentYear) - 1).toString();
+        prevLongIdx = e.history.findLastIndex(h => h.label === `31/12/${prevYear}`);
+      } 
+      
+      if (prevLongIdx === -1) {
+        // Si no es cierre de año o no encontró el año anterior, intenta saltar 3 periodos
+        if (targetIdx >= 3) {
+          prevLongIdx = targetIdx - 3;
+        } else {
+          // Si está al inicio del año (ej: Abril), busca el 31/12 anterior
+          prevLongIdx = e.history.findLastIndex(h => h.label.startsWith('31/12'));
+        }
+      }
+
+      if (prevLongIdx >= 0 && prevLongIdx < targetIdx) {
         const prevLongHist = e.history[prevLongIdx];
         const prevLongData = e.ratios.find(r => fmtDate(r['Trimestre']) === prevLongHist.label) || {};
         valPrev = parseFloat(String(prevLongData[k]).replace(',', '.'));
       }
     } else {
-      // Para No Bancos o ratios normales de Bancos, usamos el periodo anterior
       const valRawPrev = prevData[k];
       valPrev = parseFloat(String(valRawPrev).replace(',', '.'));
     }
