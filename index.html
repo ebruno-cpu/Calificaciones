@@ -1076,7 +1076,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     let valPrev = NaN;
     // Si es banco y es uno de los ratios longTerm, buscamos 3 periodos atrás
     if (e.tipo === 'Banco' && longTermRatios.includes(k)) {
-      const prevLongIdx = targetIdx - 3;
+      const prevLongIdx = targetIdx - 4;
       if (prevLongIdx >= 0) {
         const prevLongHist = e.history[prevLongIdx];
         const prevLongData = e.ratios.find(r => fmtDate(r['Trimestre']) === prevLongHist.label) || {};
