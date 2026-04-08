@@ -669,6 +669,7 @@ function fmtVal(v, key = '') {
   const cleanStr = s.replace(',', '.');
   if (!isNaN(parseFloat(cleanStr))) {
     const num = parseFloat(cleanStr);
+    let result = '';
 
     const pctKeys = [
       'Resultado Final / Ventas',
@@ -685,25 +686,26 @@ function fmtVal(v, key = '') {
     ];
 
     if (pctKeys.includes(key)) {
-      return (num * 100).toFixed(0) + '%';
-    }
-
-    if (key === 'Net CapEx') {
+      result = (num * 100).toFixed(0) + '%';
+    } else if (key === 'Net CapEx') {
       const fmt = new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: 'ARS',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(num);
-      if (num < 0) return `<span style="color: var(--red);">${fmt} M</span>`;
-      return `${fmt} M`;
+      result = `${fmt} M`;
+    } else if (key.includes('Mkt. Cap')) {
+      result = num.toFixed(2);
+    } else {
+      result = parseFloat(num.toFixed(3)).toString();
+    }
+
+    if (num < 0) {
+      return `<span style="color: var(--red);">${result}</span>`;
     }
     
-    if (key.includes('Mkt. Cap')) {
-      return num.toFixed(2);
-    }
-    
-    return parseFloat(num.toFixed(3)).toString();
+    return result;
   }
   return s;
 }
