@@ -1340,10 +1340,24 @@ function drawSectorChart(e) {
         y: {
           beginAtZero: true,
           max: 1000,
-          display: false
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { 
+            color: '#8b90a0', 
+            font: { size: 9 },
+            stepSize: 250
+          },
+          border: { display: false }
         },
         x: {
-          display: false
+          grid: { display: false },
+          ticks: { 
+            color: '#8b90a0', 
+            font: { size: 8 },
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: false
+          },
+          border: { display: false }
         }
       }
     }
