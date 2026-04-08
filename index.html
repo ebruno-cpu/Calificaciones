@@ -670,7 +670,21 @@ function fmtVal(v, key = '') {
   if (!isNaN(parseFloat(cleanStr))) {
     const num = parseFloat(cleanStr);
 
-    if (key === 'Resultado Final / Ventas') {
+    const pctKeys = [
+      'Resultado Final / Ventas',
+      'Márgen',
+      'Crecimiento Ventas',
+      'Cartera en Situación 2 a 5',
+      'Previsiones sobre Cartera Irregular Total',
+      'Total Cartera Irregular / Total Financiaciones',
+      'Efectivo y Depósito en Bancos / Activo',
+      'Absorción de Gastos de Ad. con Volúmen de Negocio',
+      'Rendimiento Anual del Patrimonio',
+      'Retorno sobre Activos',
+      'Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs'
+    ];
+
+    if (pctKeys.includes(key)) {
       return (num * 100).toFixed(0) + '%';
     }
 
@@ -683,10 +697,6 @@ function fmtVal(v, key = '') {
       }).format(num);
       if (num < 0) return `<span style="color: var(--red);">${fmt} M</span>`;
       return `${fmt} M`;
-    }
-    
-    if (key === 'Márgen' || key === 'Crecimiento Ventas') {
-      return (num * 100).toFixed(0) + '%';
     }
     
     if (key.includes('Mkt. Cap')) {
