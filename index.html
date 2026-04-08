@@ -1187,7 +1187,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         <div>
           <div class="sub-label">Factores cualitativos</div>
           <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
-          <div class="sub-label" style="margin-top: 1.5rem;">Comparativa Score Sector: ${e.sector}</div>
+          <div class="sub-label" style="margin-top: 1.5rem; text-transform: none;">Gráfico Comparativo Sector ${e.sector}</div>
           <div style="height: 180px; position: relative; margin-top: 0.5rem;">
             <canvas id="sectorChart-${e.id}"></canvas>
           </div>
@@ -1302,7 +1302,9 @@ function drawSectorChart(e) {
     ? scoresOnly[mid] 
     : (scoresOnly[mid - 1] + scoresOnly[mid]) / 2;
 
-  new Chart(canvas, {
+  if (detailCharts[`sector-${e.id}`]) detailCharts[`sector-${e.id}`].destroy();
+
+  detailCharts[`sector-${e.id}`] = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: dataPoints.map(d => d.nombre),
@@ -1342,7 +1344,7 @@ function drawSectorChart(e) {
           max: 1000,
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: { 
-            color: '#8b90a0', 
+            color: '#ffffff',
             font: { size: 9 },
             stepSize: 250
           },
@@ -1351,7 +1353,7 @@ function drawSectorChart(e) {
         x: {
           grid: { display: false },
           ticks: { 
-            color: '#8b90a0', 
+            color: '#ffffff',
             font: { size: 8 },
             maxRotation: 45,
             minRotation: 45,
