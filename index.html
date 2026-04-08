@@ -945,7 +945,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     "Aluar": "Aluar Logo.png",
     "Arcor SAIC": "Arcor Logo.png",
     "Arcor": "Arcor Logo.png",
-    "Banco de Servicios y Transacciones S.A.U.": "Banco BST Logo.png",
+    "Banco de servicios y Transacciones S.A.U.": "Banco BST Logo.png",
     "Banco BST": "Banco BST Logo.png",
     "Banco Comafi S.A.": "Banco Comafi Logo.png",
     "Banco Comafi": "Banco Comafi Logo.png",
@@ -1136,7 +1136,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         </div>
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
-            <div class="sub-label" style="margin-bottom:0; color: var(--text);">Información al: ${targetLabel}</div>
+            <div class="sub-label" style="margin-bottom:0; color: var(--text); text-transform: none;">Información al: ${targetLabel}</div>
             <div style="display:flex; align-items:center; gap:10px">
               <span style="font-size:10px; color:var(--text3); font-weight:500; letter-spacing:.08em;">Último balance: ${absoluteLatestLabel}</span>
               <select class="card-select" onclick="event.stopPropagation()" onchange="updateCardPeriod(event, '${e.id}', this.value)">
