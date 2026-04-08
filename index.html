@@ -1187,11 +1187,16 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
       <div class="detail-grid">
-        <div>
-          <div class="sub-label">Factores cualitativos</div>
-          <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
-        </div>
-        <div>
+<div>
+  <div class="sub-label">Factores cualitativos</div>
+  <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
+  
+  <div class="sub-label" style="margin-top: 1.5rem;">Comparativa Score Sector: ${e.sector}</div>
+  <div style="height: 180px; position: relative; margin-top: 0.5rem;">
+    <canvas id="sectorChart-${e.id}"></canvas>
+  </div>
+</div>
+
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
             <div class="sub-label" style="margin-bottom:0; color: var(--text); text-transform: none;">Información al: ${targetLabel}</div>
             <div style="display:flex; align-items:center; gap:10px">
