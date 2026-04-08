@@ -1184,14 +1184,18 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
       <div class="detail-grid">
-        <div>
-          <div class="sub-label">Factores cualitativos</div>
-          <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
-          <div class="sub-label" style="margin-top: 1.5rem; text-transform: none;">Gráfico Comparativo Sector ${e.sector}</div>
-          <div style="height: 180px; position: relative; margin-top: 0.5rem;">
-            <canvas id="sectorChart-${e.id}"></canvas>
-          </div>
-        </div>
+<div>
+  <div class="sub-label">Factores cualitativos</div>
+  <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
+  
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 1.5rem;">
+    <div class="sub-label" style="text-transform: none; margin-bottom: 0;">Gráfico Comparativo Sector ${e.sector}</div>
+    <div id="medianValue-${e.id}" style="font-size: 10px; font-weight: 700; color: #5b7fff; letter-spacing: 0.05em;"></div>
+  </div>
+  <div style="height: 180px; position: relative; margin-top: 0.5rem;">
+    <canvas id="sectorChart-${e.id}"></canvas>
+  </div>
+</div>
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
             <div class="sub-label" style="margin-bottom:0; color: var(--text); text-transform: none;">Información al: ${targetLabel}</div>
@@ -1300,7 +1304,7 @@ function drawSectorChart(e, selectedPeriod) {
     const mid = Math.floor(allScores.length / 2);
     const companyMedian = allScores.length % 2 !== 0 
       ? allScores[mid] 
-      : (allScores[mid - 1] + allScores[mid]) / 2;
+      : (allScores[mid - 1] + scoresOnly[mid]) / 2;
 
     return {
       nombre: emp.nombre,
@@ -1310,6 +1314,17 @@ function drawSectorChart(e, selectedPeriod) {
       isCurrent: emp.id === e.id
     };
   }).sort((a, b) => b.score - a.score);
+
+  const scoresOnly = sectorEmps.map(s => s.score).sort((a, b) => a - b);
+  const mid = Math.floor(scoresOnly.length / 2);
+  const sectorMedian = scoresOnly.length % 2 !== 0 
+    ? scoresOnly[mid] 
+    : (scoresOnly[mid - 1] + scoresOnly[mid]) / 2;
+
+  const medianDisplay = document.getElementById(`medianValue-${e.id}`);
+  if (medianDisplay) {
+    medianDisplay.textContent = `MEDIANA SECTOR: ${Math.round(sectorMedian)}`;
+  }
 
   if (detailCharts[`sector-${e.id}`]) detailCharts[`sector-${e.id}`].destroy();
 
@@ -1335,11 +1350,7 @@ function drawSectorChart(e, selectedPeriod) {
         {
           type: 'line',
           label: 'Mediana Sector',
-          data: sectorEmps.map(() => {
-            const scores = sectorEmps.map(s => s.score).sort((a,b) => a-b);
-            const mid = Math.floor(scores.length / 2);
-            return scores.length % 2 !== 0 ? scores[mid] : (scores[mid - 1] + scores[mid]) / 2;
-          }),
+          data: sectorEmps.map(() => sectorMedian),
           borderColor: '#5b7fff',
           borderWidth: 2,
           borderDash: [5, 5],
