@@ -1082,18 +1082,15 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       const isYearEnd = targetLabel.startsWith('31/12');
 
       if (isYearEnd) {
-        // Para cierres de año, busca el 31/12 anterior
         const currentYear = targetLabel.split('/')[2];
         const prevYear = (parseInt(currentYear) - 1).toString();
         prevLongIdx = e.history.findLastIndex(h => h.label === `31/12/${prevYear}`);
       } 
       
       if (prevLongIdx === -1) {
-        // Si no es cierre de año o no encontró el año anterior, intenta saltar 3 periodos
         if (targetIdx >= 3) {
           prevLongIdx = targetIdx - 3;
         } else {
-          // Si está al inicio del año (ej: Abril), busca el 31/12 anterior
           prevLongIdx = e.history.findLastIndex(h => h.label.startsWith('31/12'));
         }
       }
@@ -1187,16 +1184,15 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     </div>
     <div class="ccard-detail ${isOpen ? 'open' : ''}" id="detail-${e.id}">
       <div class="detail-grid">
-<div>
-  <div class="sub-label">Factores cualitativos</div>
-  <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
-  
-  <div class="sub-label" style="margin-top: 1.5rem;">Comparativa Score Sector: ${e.sector}</div>
-  <div style="height: 180px; position: relative; margin-top: 0.5rem;">
-    <canvas id="sectorChart-${e.id}"></canvas>
-  </div>
-</div>
-
+        <div>
+          <div class="sub-label">Factores cualitativos</div>
+          <div class="quali-list" id="quali-${e.id}">${qualiHtml}</div>
+          <div class="sub-label" style="margin-top: 1.5rem;">Comparativa Score Sector: ${e.sector}</div>
+          <div style="height: 180px; position: relative; margin-top: 0.5rem;">
+            <canvas id="sectorChart-${e.id}"></canvas>
+          </div>
+        </div>
+        <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem">
             <div class="sub-label" style="margin-bottom:0; color: var(--text); text-transform: none;">Información al: ${targetLabel}</div>
             <div style="display:flex; align-items:center; gap:10px">
@@ -1239,7 +1235,12 @@ function renderCards() {
   }).join('');
 
   filtered.forEach(e => {
-    if (expanded[e.id]) setTimeout(() => drawDetailChart(e), 60);
+    if (expanded[e.id]) {
+      setTimeout(() => {
+        drawDetailChart(e);
+        drawSectorChart(e);
+      }, 60);
+    }
   });
 }
 
@@ -1252,7 +1253,10 @@ function updateCardPeriod(event, id, selectedPeriod) {
   if (cardEl) {
     cardEl.outerHTML = createCardHTML(e, selectedPeriod, !!expanded[id]);
     if (expanded[id]) {
-      setTimeout(() => drawDetailChart(e), 10);
+      setTimeout(() => {
+        drawDetailChart(e);
+        drawSectorChart(e);
+      }, 10);
     }
   }
 }
@@ -1267,13 +1271,83 @@ function toggleCard(event, id) {
     detail.classList.add('open');
     chev.classList.add('open');
     const e = allData.find(x => x.id === id);
-    if (e) setTimeout(() => drawDetailChart(e), 60);
+    if (e) {
+      setTimeout(() => {
+        drawDetailChart(e);
+        drawSectorChart(e);
+      }, 60);
+    }
   } else {
     card.classList.remove('expanded');
     detail.classList.remove('open');
     chev.classList.remove('open');
     if (detailCharts[id]) { detailCharts[id].destroy(); delete detailCharts[id]; }
   }
+}
+
+function drawSectorChart(e) {
+  const canvas = document.getElementById(`sectorChart-${e.id}`);
+  if (!canvas) return;
+
+  const sectorEmps = allData.filter(emp => emp.sector === e.sector);
+  const dataPoints = sectorEmps.map(emp => ({
+    nombre: emp.nombre,
+    score: emp.score,
+    isCurrent: emp.id === e.id
+  })).sort((a, b) => b.score - a.score);
+
+  const scoresOnly = dataPoints.map(d => d.score).sort((a, b) => a - b);
+  const mid = Math.floor(scoresOnly.length / 2);
+  const median = scoresOnly.length % 2 !== 0 
+    ? scoresOnly[mid] 
+    : (scoresOnly[mid - 1] + scoresOnly[mid]) / 2;
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: dataPoints.map(d => d.nombre),
+      datasets: [
+        {
+          type: 'line',
+          label: 'Mediana Sector',
+          data: dataPoints.map(() => median),
+          borderColor: '#5b7fff',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          order: 1
+        },
+        {
+          data: dataPoints.map(d => d.score),
+          backgroundColor: dataPoints.map(d => d.isCurrent ? '#2ecc8a' : 'rgba(255,255,255,0.1)'),
+          borderRadius: 4,
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.datasetIndex === 0 ? `Mediana: ${ctx.parsed.y}` : `Score: ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 1000,
+          display: false
+        },
+        x: {
+          display: false
+        }
+      }
+    }
+  });
 }
 
 function drawDetailChart(e) {
