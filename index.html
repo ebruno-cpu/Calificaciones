@@ -1255,7 +1255,7 @@ function updateCardPeriod(event, id, selectedPeriod) {
     if (expanded[id]) {
       setTimeout(() => {
         drawDetailChart(e);
-        drawSectorChart(e);
+        drawSectorChart(e, selectedPeriod);
       }, 10);
     }
   }
@@ -1271,10 +1271,12 @@ function toggleCard(event, id) {
     detail.classList.add('open');
     chev.classList.add('open');
     const e = allData.find(x => x.id === id);
+    const globalPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
+    const currentPeriod = selectedCardPeriods[id] || globalPeriod;
     if (e) {
       setTimeout(() => {
         drawDetailChart(e);
-        drawSectorChart(e);
+        drawSectorChart(e, currentPeriod);
       }, 60);
     }
   } else {
@@ -1285,34 +1287,38 @@ function toggleCard(event, id) {
   }
 }
 
-function drawSectorChart(e) {
+function drawSectorChart(e, selectedPeriod) {
   const canvas = document.getElementById(`sectorChart-${e.id}`);
   if (!canvas) return;
 
-  const sectorEmps = allData.filter(emp => emp.sector === e.sector);
-  const dataPoints = sectorEmps.map(emp => ({
-    nombre: emp.nombre,
-    score: emp.score,
-    isCurrent: emp.id === e.id
-  })).sort((a, b) => b.score - a.score);
-
-  const scoresOnly = dataPoints.map(d => d.score).sort((a, b) => a - b);
-  const mid = Math.floor(scoresOnly.length / 2);
-  const median = scoresOnly.length % 2 !== 0 
-    ? scoresOnly[mid] 
-    : (scoresOnly[mid - 1] + scoresOnly[mid]) / 2;
+  const sectorEmps = allData.filter(emp => emp.sector === e.sector).map(emp => {
+    let histEntry = emp.history.find(h => h.label === selectedPeriod);
+    const scoreAtPeriod = histEntry ? histEntry.score : 0;
+    const estadoAtPeriod = histEntry ? histEntry.estado : '—';
+    
+    return {
+      nombre: emp.nombre,
+      score: scoreAtPeriod,
+      estado: estadoAtPeriod,
+      isCurrent: emp.id === e.id
+    };
+  }).sort((a, b) => b.score - a.score);
 
   if (detailCharts[`sector-${e.id}`]) detailCharts[`sector-${e.id}`].destroy();
 
   detailCharts[`sector-${e.id}`] = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: dataPoints.map(d => d.nombre),
+      labels: sectorEmps.map(d => d.nombre),
       datasets: [
         {
           type: 'line',
           label: 'Mediana Sector',
-          data: dataPoints.map(() => median),
+          data: sectorEmps.map(() => {
+            const scores = sectorEmps.map(s => s.score).sort((a,b) => a-b);
+            const mid = Math.floor(scores.length / 2);
+            return scores.length % 2 !== 0 ? scores[mid] : (scores[mid - 1] + scores[mid]) / 2;
+          }),
           borderColor: '#5b7fff',
           borderWidth: 2,
           borderDash: [5, 5],
@@ -1320,8 +1326,8 @@ function drawSectorChart(e) {
           order: 1
         },
         {
-          data: dataPoints.map(d => d.score),
-          backgroundColor: dataPoints.map(d => d.isCurrent ? '#2ecc8a' : 'rgba(255,255,255,0.1)'),
+          data: sectorEmps.map(d => d.score),
+          backgroundColor: sectorEmps.map(d => colorHex(estadoToColor(d.estado)) + (d.isCurrent ? 'FF' : '66')),
           borderRadius: 4,
           order: 2
         }
@@ -1334,7 +1340,8 @@ function drawSectorChart(e) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => ctx.datasetIndex === 0 ? `Mediana: ${ctx.parsed.y}` : `Score: ${ctx.parsed.y}`
+            title: (items) => sectorEmps[items[0].dataIndex].nombre,
+            label: (ctx) => ctx.datasetIndex === 0 ? `Mediana: ${ctx.parsed.y}` : `Score: ${ctx.parsed.y} (${sectorEmps[ctx.dataIndex].estado})`
           }
         }
       },
@@ -1344,7 +1351,7 @@ function drawSectorChart(e) {
           max: 1000,
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: { 
-            color: '#ffffff',
+            color: '#ffffff', 
             font: { size: 9 },
             stepSize: 250
           },
@@ -1353,8 +1360,14 @@ function drawSectorChart(e) {
         x: {
           grid: { display: false },
           ticks: { 
-            color: '#ffffff',
-            font: { size: 8 },
+            color: (context) => {
+              const index = context.index;
+              return sectorEmps[index] && sectorEmps[index].isCurrent ? '#ffffff' : '#555a6a';
+            },
+            font: { 
+              size: 8, 
+              weight: (context) => (context.tick && sectorEmps[context.index] && sectorEmps[context.index].isCurrent) ? '700' : '400' 
+            },
             maxRotation: 45,
             minRotation: 45,
             autoSkip: false
