@@ -1025,6 +1025,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       background: #ffffff; padding: 4px; box-sizing: border-box;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
+    .trend-icon { font-size: 10px; margin-left: 4px; vertical-align: middle; }
   `;
 
   const logoHeadHtml = logoUrl 
@@ -1036,23 +1037,27 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     const foundIdx = e.history.findIndex(x => x.label === selectedPeriod);
     if (foundIdx !== -1) targetIdx = foundIdx;
   }
+  
   const currentHist = e.history[targetIdx] || {};
+  const targetLabel = currentHist.label || '—';
   const targetScore = currentHist.score || 0;
   const targetEstado = currentHist.estado || '—';
-  const targetLabel = currentHist.label || '—';
-  const absoluteLatestLabel = e.history.length > 0 ? e.history[e.history.length - 1].label : '—';
+  
   const prevHist = targetIdx > 0 ? e.history[targetIdx - 1] : null;
-  const prevScore = prevHist ? prevHist.score : null;
-  const delta = prevScore !== null ? Math.round(targetScore - prevScore) : null;
+  const prevLabel = prevHist ? prevHist.label : null;
+
+  const absoluteLatestLabel = e.history.length > 0 ? e.history[e.history.length - 1].label : '—';
+  const delta = prevHist ? Math.round(targetScore - prevHist.score) : null;
   const deltaHtml = delta !== null
     ? `<span style="font-size:11px;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'};">${delta >= 0 ? '+' : ''}${delta}</span>`
     : '';
+
   const col = estadoToColor(targetEstado);
   const hex = colorHex(col);
   const pct = Math.round((targetScore / 1000) * 100);
-  let targetData = {};
-  const targetRatio = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel);
-  if (targetRatio) targetData = targetRatio;
+
+  let targetData = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel) || {};
+  let prevData = prevLabel ? (e.ratios.find(r => fmtDate(r['Trimestre']) === prevLabel) || {}) : {};
 
   const periodOptions = [...e.history].reverse().map(h => {
     const selected = h.label === targetLabel ? 'selected' : '';
@@ -1075,9 +1080,30 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   };
 
   const ratioHtml = e.ratioKeys.map(k => {
-    const raw = targetData[k];
-    const v = fmtVal(raw, k);
-    const isNoMkt = String(raw || '').toLowerCase().includes('no mkt') || String(raw || '').toLowerCase().includes('no market');
+    const rawCurr = targetData[k];
+    const rawPrev = prevData[k];
+    const v = fmtVal(rawCurr, k);
+    const isNoMkt = String(rawCurr || '').toLowerCase().includes('no mkt') || String(rawCurr || '').toLowerCase().includes('no market');
+
+    let trendHtml = '';
+    const valCurr = parseFloat(String(rawCurr).replace(',', '.'));
+    const valPrev = parseFloat(String(rawPrev).replace(',', '.'));
+
+    if (!isNaN(valCurr) && !isNaN(valPrev) && valCurr !== valPrev) {
+      const positiveBetter = [
+        'Resultado Final / Ventas', 'Márgen', 'Crecimiento Ventas', 
+        'EBITDA / Intereses', 'Rendimiento Anual del Patrimonio', 
+        'Retorno sobre Activos', 'EBITDA / Activos Totales', 'PN / Bienes de Uso'
+      ];
+      
+      const isImprovement = positiveBetter.includes(k) ? valCurr > valPrev : valCurr < valPrev;
+      
+      if (isImprovement) {
+        trendHtml = `<span class="trend-icon" style="color: var(--green);">▲</span>`;
+      } else {
+        trendHtml = `<span class="trend-icon" style="color: var(--red);">▼</span>`;
+      }
+    }
 
     let labelHtml = k;
     if (tooltipsDef[k]) {
@@ -1090,22 +1116,25 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       `;
     }
 
-    return `<div class="rchip"><div class="rchip-label">${labelHtml}</div><div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">${v}</div></div>`;
+    return `
+      <div class="rchip">
+        <div class="rchip-label">${labelHtml}</div>
+        <div class="rchip-val${isNoMkt ? ' no-mkt' : ''}">
+          ${v}${trendHtml}
+        </div>
+      </div>`;
   }).join('');
 
   return `
   <style>${logoCss}</style>
-
   <div class="ccard border-${col} ${isPlazaLogistica} ${isOpen ? ' expanded' : ''}" id="card-${e.id}" onclick="toggleCard(event,'${e.id}')">
     <div class="ccard-head">
       ${logoHeadHtml}
-      
       <div class="ccard-meta">
         <div class="ccard-name">
           ${e.nombre}
           <span class="sector-badge">${e.sector}</span>
         </div>
-        
         <div class="ccard-sub" style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px; line-height: 1;">
             <span class="score-number-display" style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; color: ${hex};">
                 ${Math.round(targetScore)}
@@ -1115,7 +1144,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
               ${e.ticker ? e.ticker + ' · ' : ''}Información al: ${targetLabel}
             </span>
         </div>
-        
         <div class="score-strip" style="margin-top:6px">
           <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%;background:${hex}"></div></div>
           <span style="font-size:10px;color:var(--text3);min-width:32px;text-align:right">${targetScore > 0 ? (targetScore/10).toFixed(0)+'%' : '—'}</span>
