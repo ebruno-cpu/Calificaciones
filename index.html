@@ -473,9 +473,12 @@ body {
 }
 
 .ccard.is-plaza-logistica .ccard-logo-head {
-   background-color: #9aa0b1 !important;
-   border: 6px solid #ffffff !important;
-   padding: 2px !important;
+  background-color: #9aa0b1 !important;
+  border-top: 12px solid #ffffff !important;
+  border-bottom: 12px solid #ffffff !important;
+  border-left: 4px solid #ffffff !important;
+  border-right: 4px solid #ffffff !important;
+  padding: 3px !important;
 }
 
 </style>
@@ -748,7 +751,7 @@ async function reloadData() {
     }).filter(e => e.ratios.length > 0);
     const sectors = [...new Set(allData.map(e => e.sector).filter(Boolean))].sort();
     const sel = document.getElementById('sec-filter');
-    sel.innerHTML = '<option value="">Todos los sectors</option>';
+    sel.innerHTML = '<option value="">Todos los sectores</option>';
     sectors.forEach(s => {
       const o = document.createElement('option');
       o.value = s; o.textContent = s;
@@ -991,7 +994,6 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   };
 
   const logoUrl = companyLogoMap[e.nombre] || companyLogoMap[e.ticker] || "";
-
   const isPlazaLogistica = e.nombre.includes("Plaza Logistica") ? "is-plaza-logistica" : "";
 
   const logoCss = `
