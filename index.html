@@ -1091,11 +1091,12 @@ const ratioHtml = e.ratioKeys.map(k => {
       'Resultado Final / Ventas',
       'Mkt. Cap / Ventas',
       'Márgen',
-      'Crecimiento Ventas'
+      'Crecimiento Ventas',
+      'Mkt. Cap / PN'
     ];
 
     let valPrev = NaN;
-    if (longTermRatios.includes(k)) {
+    if (e.tipo === 'Banco' && longTermRatios.includes(k)) {
       const prevLongIdx = targetIdx - 3;
       if (prevLongIdx >= 0) {
         const prevLongHist = e.history[prevLongIdx];
