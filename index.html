@@ -1079,21 +1079,47 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     'Apalancamiento': 'Nivel de deuda en relación al capital propio.'
   };
 
-  const ratioHtml = e.ratioKeys.map(k => {
+const ratioHtml = e.ratioKeys.map(k => {
     const rawCurr = targetData[k];
-    const rawPrev = prevData[k];
     const v = fmtVal(rawCurr, k);
     const isNoMkt = String(rawCurr || '').toLowerCase().includes('no mkt') || String(rawCurr || '').toLowerCase().includes('no market');
 
     let trendHtml = '';
     const valCurr = parseFloat(String(rawCurr).replace(',', '.'));
-    const valPrev = parseFloat(String(rawPrev).replace(',', '.'));
+
+    const longTermRatios = [
+      'Resultado Final / Ventas',
+      'Mkt. Cap / Ventas',
+      'Márgen',
+      'Crecimiento Ventas'
+    ];
+
+    let valPrev = NaN;
+    if (longTermRatios.includes(k)) {
+      const prevLongIdx = targetIdx - 3;
+      if (prevLongIdx >= 0) {
+        const prevLongHist = e.history[prevLongIdx];
+        const prevLongData = e.ratios.find(r => fmtDate(r['Trimestre']) === prevLongHist.label) || {};
+        valPrev = parseFloat(String(prevLongData[k]).replace(',', '.'));
+      }
+    } else {
+      const valRawPrev = prevData[k];
+      valPrev = parseFloat(String(valRawPrev).replace(',', '.'));
+    }
 
     if (!isNaN(valCurr) && !isNaN(valPrev) && valCurr !== valPrev) {
       const positiveBetter = [
-        'Resultado Final / Ventas', 'Márgen', 'Crecimiento Ventas', 
-        'EBITDA / Intereses', 'Rendimiento Anual del Patrimonio', 
-        'Retorno sobre Activos', 'EBITDA / Activos Totales', 'PN / Bienes de Uso'
+        'Resultado Final / Ventas', 
+        'Márgen', 
+        'Crecimiento Ventas', 
+        'EBITDA / Intereses', 
+        'Rendimiento Anual del Patrimonio', 
+        'Retorno sobre Activos', 
+        'EBITDA / Activos Totales', 
+        'PN / Bienes de Uso',
+        'Efectivo y Depósito en Bancos / Activo',
+        'Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs',
+        'Previsiones sobre Cartera Irregular Total'
       ];
       
       const isImprovement = positiveBetter.includes(k) ? valCurr > valPrev : valCurr < valPrev;
