@@ -914,7 +914,16 @@ function renderSectorEvolution() {
 
     const sectors = [...new Set(allData.map(e => e.sector))].sort();
     
-    const datasets = sectors.map((sector, index) => {
+    const sectorColorMap = {
+        'Agro': '#2ecc8a',
+        'Banco': '#e67e22',
+        'Construcción': '#f0b429',
+        'Industria': '#9aa0b1',
+        'Petróleo': '#5b7fff',
+        'Servicios': '#9b59b6'
+    };
+
+    const datasets = sectors.map((sector) => {
         const dataPoints = validPeriods.map(period => {
             const scoresInPeriod = allData
                 .filter(e => e.sector === sector)
@@ -931,11 +940,7 @@ function renderSectorEvolution() {
                 : (scoresInPeriod[mid - 1] + scoresInPeriod[mid]) / 2;
         });
 
-        const colors = [
-            '#5b7fff', '#2ecc8a', '#f0b429', '#e85454', '#9b59b6', 
-            '#34495e', '#1abc9c', '#e67e22', '#f1c40f', '#d35400'
-        ];
-        const color = colors[index % colors.length];
+        const color = sectorColorMap[sector] || '#1abc9c';
 
         return {
             label: sector,
