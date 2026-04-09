@@ -545,6 +545,16 @@ body {
   </div>
 </div>
 
+<div class="overview-card">
+  <div class="section-head">
+    <h2>Evolución de Medianas por Sector</h2>
+    <span style="font-size: 12px; color: var(--text3);">Comparativa histórica de solvencia crediticia (Periodos con datos completos)</span>
+  </div>
+  <div class="chart-wrap" style="height: 350px;">
+    <canvas id="sector-evolution-chart"></canvas>
+  </div>
+</div>
+
   <div class="filters">
     <input type="text" id="search" placeholder="Buscar empresa, ticker o sector..." oninput="renderCards()">
     <select id="sec-filter" onchange="renderCards()">
@@ -595,6 +605,7 @@ const GVZ = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx
 
 let allData = [];
 let overviewChart = null;
+let sectorEvolutionChart = null;
 let detailCharts = {};
 let expanded = {};
 let selectedCardPeriods = {};
@@ -791,6 +802,7 @@ async function reloadData() {
     setStatus('ok', 'Datos actualizados');
     document.getElementById('loading-msg').style.display = 'none';
     renderOverview();
+    renderSectorEvolution();
     renderCards();
   } catch (err) {
     setStatus('error', 'Error al cargar');
@@ -878,6 +890,116 @@ function renderOverview() {
       }
     }
   });
+}
+
+function renderSectorEvolution() {
+    const ctx = document.getElementById('sector-evolution-chart');
+    if (!ctx) return;
+
+    const bankPeriods = new Set();
+    const genPeriods = new Set();
+    allData.forEach(e => {
+        e.history.forEach(h => {
+            if (e.tipo === 'Banco') bankPeriods.add(h.label);
+            else genPeriods.add(h.label);
+        });
+    });
+    
+    const validPeriods = Array.from(bankPeriods)
+        .filter(p => genPeriods.has(p))
+        .sort((a, b) => {
+            const pa = a.split('/'), pb = b.split('/');
+            return new Date(`20${pa[2]}-${pa[1]}-${pa[0]}`) - new Date(`20${pb[2]}-${pb[1]}-${pb[0]}`);
+        });
+
+    const sectors = [...new Set(allData.map(e => e.sector))].sort();
+    
+    const datasets = sectors.map((sector, index) => {
+        const dataPoints = validPeriods.map(period => {
+            const scoresInPeriod = allData
+                .filter(e => e.sector === sector)
+                .map(e => e.history.find(h => h.label === period))
+                .filter(h => h)
+                .map(h => h.score)
+                .sort((a, b) => a - b);
+
+            if (scoresInPeriod.length === 0) return null;
+
+            const mid = Math.floor(scoresInPeriod.length / 2);
+            return scoresInPeriod.length % 2 !== 0 
+                ? scoresInPeriod[mid] 
+                : (scoresInPeriod[mid - 1] + scoresInPeriod[mid]) / 2;
+        });
+
+        const colors = [
+            '#5b7fff', '#2ecc8a', '#f0b429', '#e85454', '#9b59b6', 
+            '#34495e', '#1abc9c', '#e67e22', '#f1c40f', '#d35400'
+        ];
+        const color = colors[index % colors.length];
+
+        return {
+            label: sector,
+            data: dataPoints,
+            borderColor: color,
+            backgroundColor: color + '22',
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2,
+            spanGaps: true
+        };
+    });
+
+    if (sectorEvolutionChart) sectorEvolutionChart.destroy();
+
+    sectorEvolutionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: validPeriods,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { 
+                        color: '#8b90a0', 
+                        font: { size: 10 }, 
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1a1e28',
+                    titleColor: '#e8eaf0',
+                    bodyColor: '#e8eaf0',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${Math.round(context.parsed.y)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    max: 1000,
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#8b90a0', stepSize: 250 },
+                    border: { display: false }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#8b90a0', font: { size: 10 } },
+                    border: { display: false }
+                }
+            }
+        }
+    });
 }
 
 function onGlobalPeriodChange() {
@@ -1304,7 +1426,7 @@ function drawSectorChart(e, selectedPeriod) {
     const mid = Math.floor(allScores.length / 2);
     const companyMedian = allScores.length % 2 !== 0 
       ? allScores[mid] 
-      : (allScores[mid - 1] + scoresOnly[mid]) / 2;
+      : (allScores[mid - 1] + allScores[mid]) / 2;
 
     return {
       nombre: emp.nombre,
