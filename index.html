@@ -20,6 +20,9 @@
   --green: #2ecc8a;
   --green-bg: rgba(46,204,138,0.1);
   --green-border: rgba(46,204,138,0.25);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.1);
+  --blue-border: rgba(59,130,246,0.25);
   --yellow: #f0b429;
   --yellow-bg: rgba(240,180,41,0.1);
   --yellow-border: rgba(240,180,41,0.25);
@@ -188,6 +191,7 @@ body {
 .ccard:hover { border-color: var(--border2); }
 .ccard.expanded { border-color: var(--border2); }
 .ccard.border-g { border-left: 3px solid var(--green); }
+.ccard.border-b { border-left: 3px solid var(--blue); }
 .ccard.border-y { border-left: 3px solid var(--yellow); }
 .ccard.border-r { border-left: 3px solid var(--red); }
 
@@ -217,6 +221,7 @@ body {
   transition: background .2s, box-shadow .2s;
 }
 .tl-dot.on-g { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.tl-dot.on-b { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
 .tl-dot.on-y { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
 .tl-dot.on-r { background: var(--red); box-shadow: 0 0 8px var(--red); }
 
@@ -397,7 +402,7 @@ body {
 }
 .sk-tl {
   width: 10px;
-  height: 38px;
+  height: 52px;
 }
 
 .tooltip-wrapper {
@@ -518,6 +523,10 @@ body {
       <span>Recomendable</span>
     </div>
     <div class="tl-indicator">
+      <span class="tl-circle" style="background:var(--blue)"></span>
+      <span>Favorable +</span>
+    </div>
+    <div class="tl-indicator">
       <span class="tl-circle" style="background:var(--yellow)"></span>
       <span>Favorable -</span>
     </div>
@@ -568,6 +577,7 @@ body {
     <select id="estado-filter" onchange="renderCards()">
       <option value="">Todos los estados</option>
       <option value="g">Recomendables</option>
+      <option value="b">Favorables +</option>
       <option value="y">Favorables -</option>
       <option value="r">No recomendables</option>
     </select>
@@ -704,7 +714,8 @@ function fmtVal(v, key = '') {
 function estadoToColor(estado) {
   const s = String(estado || '').trim().toLowerCase();
   if (s === 'recomendable') return 'g';
-  if (s.startsWith('favorable')) return 'y';
+  if (s === 'favorable +') return 'b';
+  if (s === 'favorable -' || s.startsWith('favorable')) return 'y';
   if (s === 'no recomendable') return 'r';
   return 'y';
 }
@@ -714,7 +725,10 @@ function getColor(e) {
 }
 
 function colorHex(c) {
-  return c === 'g' ? '#2ecc8a' : c === 'y' ? '#f0b429' : '#e85454';
+  if (c === 'g') return '#2ecc8a';
+  if (c === 'b') return '#3b82f6';
+  if (c === 'y') return '#f0b429';
+  return '#e85454';
 }
 
 async function reloadData() {
@@ -1310,6 +1324,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       <div class="traffic-light">
         <div class="tl-dot ${col === 'r' ? 'on-r' : ''}"></div>
         <div class="tl-dot ${col === 'y' ? 'on-y' : ''}"></div>
+        <div class="tl-dot ${col === 'b' ? 'on-b' : ''}"></div>
         <div class="tl-dot ${col === 'g' ? 'on-g' : ''}"></div>
       </div>
       <span class="chev ${isOpen ? 'open' : ''}">▼</span>
