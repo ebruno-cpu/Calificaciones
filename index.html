@@ -882,8 +882,8 @@ function renderOverview() {
           ticks: { 
             color: '#e8eaf0', 
             font: { size: 10, weight: 'normal' }, 
-            maxRotation: 45, 
-            minRotation: 45 
+            maxRotation: 0, 
+            minRotation: 0 
           },
           border: { color: 'transparent' }
         }
@@ -1002,8 +1002,8 @@ function renderSectorEvolution() {
                     ticks: { 
                         color: '#e8eaf0', 
                         font: { size: 10, weight: 'normal' }, 
-                        maxRotation: 45, 
-                        minRotation: 45 
+                        maxRotation: 0, 
+                        minRotation: 0 
                     },
                     border: { color: 'transparent' }
                 }
@@ -1529,8 +1529,8 @@ function drawSectorChart(e, selectedPeriod) {
               size: 8, 
               weight: (context) => (context.tick && sectorEmps[context.index] && sectorEmps[context.index].isCurrent) ? '700' : '400' 
             },
-            maxRotation: 45,
-            minRotation: 45,
+            maxRotation: 0,
+            minRotation: 0,
             autoSkip: false
           },
           border: { display: false }
@@ -1619,7 +1619,7 @@ function drawDetailChart(e) {
         y: yScaleConfig,
         x: {
           grid: { display: false },
-          ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 45, autoSkip: false },
+          ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 0, minRotation: 0, autoSkip: false },
           border: { color: 'transparent' }
         }
       }
