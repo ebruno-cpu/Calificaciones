@@ -1447,15 +1447,27 @@ function drawSectorChart(e, selectedPeriod) {
     };
   }).sort((a, b) => b.score - a.score);
 
-  const scoresOnly = sectorEmps.map(s => s.score).sort((a, b) => a - b);
-  const mid = Math.floor(scoresOnly.length / 2);
-  const sectorMedian = scoresOnly.length % 2 !== 0 
-    ? scoresOnly[mid] 
-    : (scoresOnly[mid - 1] + scoresOnly[mid]) / 2;
+  const allSectorScores = [];
+  allData.filter(emp => emp.sector === e.sector).forEach(emp => {
+    emp.history.forEach(h => {
+      if (h.score !== undefined && !isNaN(h.score)) {
+        allSectorScores.push(h.score);
+      }
+    });
+  });
+  
+  allSectorScores.sort((a, b) => a - b);
+  let sectorHistoricalMedian = 0;
+  if (allSectorScores.length > 0) {
+    const mid = Math.floor(allSectorScores.length / 2);
+    sectorHistoricalMedian = allSectorScores.length % 2 !== 0 
+      ? allSectorScores[mid] 
+      : (allSectorScores[mid - 1] + allSectorScores[mid]) / 2;
+  }
 
   const medianDisplay = document.getElementById(`medianValue-${e.id}`);
   if (medianDisplay) {
-    medianDisplay.textContent = `MEDIANA SECTOR: ${Math.round(sectorMedian)}`;
+    medianDisplay.textContent = `MEDIANA HIST. SECTOR: ${Math.round(sectorHistoricalMedian)}`;
   }
 
   if (detailCharts[`sector-${e.id}`]) detailCharts[`sector-${e.id}`].destroy();
@@ -1481,8 +1493,8 @@ function drawSectorChart(e, selectedPeriod) {
         },
         {
           type: 'line',
-          label: 'Mediana Sector',
-          data: sectorEmps.map(() => sectorMedian),
+          label: 'Mediana Histórica Sector',
+          data: sectorEmps.map(() => sectorHistoricalMedian),
           borderColor: '#5b7fff',
           borderWidth: 2,
           borderDash: [5, 5],
@@ -1507,7 +1519,7 @@ function drawSectorChart(e, selectedPeriod) {
             title: (items) => sectorEmps[items[0].dataIndex].nombre,
             label: (ctx) => {
               if (ctx.datasetIndex === 0) return `Su Mediana Histórica: ${Math.round(ctx.parsed.y)}`;
-              if (ctx.datasetIndex === 1) return `Mediana del Sector: ${Math.round(ctx.parsed.y)}`;
+              if (ctx.datasetIndex === 1) return `Mediana Histórica del Sector: ${Math.round(ctx.parsed.y)}`;
               return `Score Actual: ${ctx.parsed.y} (${sectorEmps[ctx.dataIndex].estado})`;
             }
           }
@@ -1529,8 +1541,8 @@ function drawSectorChart(e, selectedPeriod) {
               size: 8, 
               weight: (context) => (context.tick && sectorEmps[context.index] && sectorEmps[context.index].isCurrent) ? '700' : '400' 
             },
-            maxRotation: 0,
-            minRotation: 0,
+            maxRotation: 45,
+            minRotation: 45,
             autoSkip: false
           },
           border: { display: false }
