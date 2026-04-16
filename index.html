@@ -1186,6 +1186,8 @@ function createCardHTML(e, selectedPeriod, isOpen) {
   let targetData = e.ratios.find(r => fmtDate(r['Trimestre']) === targetLabel) || {};
   let prevData = prevLabel ? (e.ratios.find(r => fmtDate(r['Trimestre']) === prevLabel) || {}) : {};
 
+  const calificacionMercado = targetData['Calificación Mercado'] ? targetData['Calificación Mercado'] : '—';
+
   const periodOptions = [...e.history].reverse().map(h => {
     const selected = h.label === targetLabel ? 'selected' : '';
     return `<option value="${h.label}" ${selected}>${h.label}</option>`;
@@ -1305,6 +1307,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         <div class="ccard-name">
           ${e.nombre}
           <span class="sector-badge">${e.sector}</span>
+          <span style="font-size: 11px; color: var(--text2); margin-left: 8px; font-weight: 400;">Calificación de Mercado: <span style="font-weight: 700; color: var(--text);">${calificacionMercado}</span></span>
         </div>
         <div class="ccard-sub" style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px; line-height: 1;">
             <span class="score-number-display" style="font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; color: ${hex};">
