@@ -1308,22 +1308,53 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     }
 
     if (!isNaN(valCurr) && !isNaN(valPrev) && valCurr !== valPrev) {
-      const positiveBetter = [
-        'Resultado Final / Ventas', 
-        'Márgen', 
-        'Crecimiento Ventas', 
-        'EBITDA / Intereses', 
-        'Rendimiento Anual del Patrimonio', 
-        'Retorno sobre Activos', 
-        'EBITDA / Activos Totales', 
-        'PN / Bienes de Uso',
+      let isImprovement = false;
+
+      const ratiosCrece = [
+        'Previsiones sobre Cartera Irregular Total',
+        'Rendimiento Anual del Patrimonio',
+        'Retorno sobre Activos',
         'Efectivo y Depósito en Bancos / Activo',
         'Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs',
-        'Previsiones sobre Cartera Irregular Total'
+        'Resultado Final / Ventas',
+        'Márgen',
+        'Crecimiento Ventas',
+        'Activo Corriente/ Pasivo Corriente',
+        'EBITDA / Intereses',
+        'EBITDA / PN + Related Companies (Pasivo)',
+        'PN / Bienes de Uso',
+        'EBITDA / Activos Totales'
       ];
-      
-      const isImprovement = positiveBetter.includes(k) ? valCurr > valPrev : valCurr < valPrev;
-      
+
+      const ratiosDecrece = [
+        'Apalancamiento',
+        'Cartera en Situación 2 a 5',
+        'Total Cartera Irregular / Total Financiaciones',
+        'Absorción de Gastos de Ad. con Volúmen de Negocio',
+        'Deuda Financiera Total / EBITDA',
+        'Pasivo Total / Patrimonio Neto',
+        'Deuda Bancaria.CP / Patrimonio Neto',
+        'Deuda Financiera Neta + Mkt. Cap / EBITDA'
+      ];
+
+      if (ratiosCrece.includes(k)) {
+        isImprovement = valCurr > valPrev;
+      } else if (ratiosDecrece.includes(k)) {
+        isImprovement = valCurr < valPrev;
+      } else if (k === 'Mkt. Cap / Ventas') {
+        if (valPrev < 3 && valCurr <= 3) isImprovement = valCurr > valPrev;
+        else if (valPrev >= 3 && valCurr >= 3) isImprovement = valCurr < valPrev;
+        else if (valPrev >= 3 && valCurr <= 3) isImprovement = true;
+        else isImprovement = false;
+      } else if (k === 'Mkt. Cap / PN') {
+        if (valPrev < 2 && valCurr <= 2) isImprovement = valCurr > valPrev;
+        else if (valPrev >= 2 && valCurr >= 2) isImprovement = valCurr < valPrev;
+        else if (valPrev >= 2 && valCurr <= 2) isImprovement = true;
+        else isImprovement = false;
+      } else {
+        isImprovement = valCurr < valPrev;
+      }
+
       if (isImprovement) {
         trendHtml = `<span class="trend-icon" style="color: var(--green);">▲</span>`;
       } else {
