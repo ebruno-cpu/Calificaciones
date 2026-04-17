@@ -736,7 +736,6 @@ function colorHex(c) {
 
 function getQualiScore(val) {
   if (!val || val === '—') return 0;
-  // Normalizar: a minúsculas, sin tildes, sin espacios extra
   const s = String(val).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   
   const level5 = ['excelente', 'positiva', 'positivo', 'cumplimiento total', 'muy fuerte', 'sobresaliente'];
@@ -751,7 +750,7 @@ function getQualiScore(val) {
   if (level2.includes(s)) return 2;
   if (level1.includes(s)) return 1;
   
-  return 0; // Desconocido o sin clasificación jerárquica clara
+  return 0; 
 }
 
 async function reloadData() {
@@ -1579,7 +1578,8 @@ function drawSectorChart(e, selectedPeriod) {
           data: sectorEmps.map(d => d.score),
           backgroundColor: sectorEmps.map(d => colorHex(estadoToColor(d.estado)) + (d.isCurrent ? 'FF' : '66')),
           borderRadius: 4,
-          order: 3
+          order: 3,
+          maxBarThickness: 45
         }
       ]
     },
