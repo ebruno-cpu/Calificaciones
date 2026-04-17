@@ -734,6 +734,26 @@ function colorHex(c) {
   return '#e85454';
 }
 
+function getQualiScore(val) {
+  if (!val || val === '—') return 0;
+  // Normalizar: a minúsculas, sin tildes, sin espacios extra
+  const s = String(val).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  
+  const level5 = ['excelente', 'positiva', 'positivo', 'cumplimiento total', 'muy fuerte', 'sobresaliente'];
+  const level4 = ['muy bueno', 'muy buena', 'fuerte', 'alto', 'alta'];
+  const level3 = ['bueno', 'buena', 'estable', 'adecuado', 'adecuada', 'satisfactorio', 'satisfactoria', 'medio', 'media', 'neutral'];
+  const level2 = ['regular', 'en observacion', 'revision', 'cumplimiento parcial', 'bajo', 'baja', 'debil', 'en desarrollo'];
+  const level1 = ['malo', 'mala', 'negativa', 'negativo', 'incumplimiento', 'pobre', 'muy debil', 'nulo'];
+  
+  if (level5.includes(s)) return 5;
+  if (level4.includes(s)) return 4;
+  if (level3.includes(s)) return 3;
+  if (level2.includes(s)) return 2;
+  if (level1.includes(s)) return 1;
+  
+  return 0; // Desconocido o sin clasificación jerárquica clara
+}
+
 async function reloadData() {
   setStatus('loading', 'Cargando...');
   document.getElementById('loading-msg').style.display = 'block';
@@ -1214,8 +1234,23 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   const qualiKeys = ['Character Accionistas', 'Track Record', 'Perspectiva del Negocio'];
   const qualiHtml = qualiKeys.map(k => {
-    const v = targetData[k] || '—';
-    return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${v}</span></div>`;
+    const vCurr = targetData[k] || '—';
+    const vPrev = prevData[k] || '—';
+    
+    let trendHtml = '';
+    
+    if (vCurr !== '—' && vPrev !== '—' && vCurr !== vPrev) {
+      const scoreCurr = getQualiScore(vCurr);
+      const scorePrev = getQualiScore(vPrev);
+      
+      if (scoreCurr > scorePrev && scoreCurr !== 0 && scorePrev !== 0) {
+        trendHtml = `<span class="trend-icon" style="color: var(--green);">▲</span>`;
+      } else if (scoreCurr < scorePrev && scoreCurr !== 0 && scorePrev !== 0) {
+        trendHtml = `<span class="trend-icon" style="color: var(--red);">▼</span>`;
+      }
+    }
+
+    return `<div class="quali-row"><span class="quali-key">${k}</span><span class="quali-val">${vCurr}${trendHtml}</span></div>`;
   }).join('');
 
   const tooltipsDef = {
