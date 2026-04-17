@@ -1311,6 +1311,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       let isImprovement = false;
 
       const ratiosCrece = [
+        // Bancos
         'Previsiones sobre Cartera Irregular Total',
         'Rendimiento Anual del Patrimonio',
         'Retorno sobre Activos',
@@ -1319,37 +1320,48 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         'Resultado Final / Ventas',
         'Márgen',
         'Crecimiento Ventas',
+        // No Bancos
         'Activo Corriente/ Pasivo Corriente',
         'EBITDA / Intereses',
         'EBITDA / PN + Related Companies (Pasivo)',
         'PN / Bienes de Uso',
-        'EBITDA / Activos Totales'
+        'Net CapEx'
       ];
 
       const ratiosDecrece = [
+        // Bancos
         'Apalancamiento',
         'Cartera en Situación 2 a 5',
         'Total Cartera Irregular / Total Financiaciones',
-        'Absorción de Gastos de Ad. con Volúmen de Negocio',
+        'Absorción de Gastos de Ad. con Volúmen de Negocio'
+      ];
+
+      const ratiosDecreceMayorCero = [
+        // No Bancos
         'Deuda Financiera Total / EBITDA',
         'Pasivo Total / Patrimonio Neto',
         'Deuda Bancaria.CP / Patrimonio Neto',
-        'Deuda Financiera Neta + Mkt. Cap / EBITDA'
+        'Mkt. Cap / Resultado Final Normalizado',
+        'Deuda Financiera Neta + Mkt. Cap / EBITDA',
+        'EBITDA / Activos Totales'
       ];
 
       if (ratiosCrece.includes(k)) {
         isImprovement = valCurr > valPrev;
       } else if (ratiosDecrece.includes(k)) {
         isImprovement = valCurr < valPrev;
+      } else if (ratiosDecreceMayorCero.includes(k)) {
+        isImprovement = (valCurr < valPrev) && (valCurr > 0);
       } else if (k === 'Mkt. Cap / Ventas') {
         if (valPrev < 3 && valCurr <= 3) isImprovement = valCurr > valPrev;
         else if (valPrev >= 3 && valCurr >= 3) isImprovement = valCurr < valPrev;
         else if (valPrev >= 3 && valCurr <= 3) isImprovement = true;
         else isImprovement = false;
       } else if (k === 'Mkt. Cap / PN') {
-        if (valPrev < 2 && valCurr <= 2) isImprovement = valCurr > valPrev;
-        else if (valPrev >= 2 && valCurr >= 2) isImprovement = valCurr < valPrev;
-        else if (valPrev >= 2 && valCurr <= 2) isImprovement = true;
+        let limite = e.tipo === 'Banco' ? 2 : 2.5;
+        if (valPrev < limite && valCurr <= limite) isImprovement = valCurr > valPrev;
+        else if (valPrev >= limite && valCurr >= limite) isImprovement = valCurr < valPrev;
+        else if (valPrev >= limite && valCurr <= limite) isImprovement = true;
         else isImprovement = false;
       } else {
         isImprovement = valCurr < valPrev;
