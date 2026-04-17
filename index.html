@@ -1434,6 +1434,17 @@ function createCardHTML(e, selectedPeriod, isOpen) {
         else if (valPrev >= limite && valCurr >= limite) isImprovement = valCurr < valPrev;
         else if (valPrev >= limite && valCurr <= limite) isImprovement = true;
         else isImprovement = false;
+      } else if (k === 'Ratio Sector') {
+        let sNorm = String(e.sector).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (sNorm === "PETROLEO") sNorm = "ENERGIA";
+
+        if (sNorm === "AGRO" || sNorm === "CONSTRUCCION") {
+          isImprovement = valCurr < valPrev;
+        } else if (sNorm === "INDUSTRIA" || sNorm === "ENERGIA" || sNorm === "SERVICIOS" || sNorm === "COMERCIO") {
+          isImprovement = valCurr > valPrev; 
+        } else {
+          isImprovement = valCurr > valPrev; 
+        }
       } else {
         isImprovement = valCurr < valPrev;
       }
