@@ -506,7 +506,7 @@ body {
       <span id="status-txt" style="font-size:12px;color:var(--text2)">Cargando...</span>
     </div>
     <button class="btn-refresh" onclick="reloadData()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 0 20.49 15"/></svg>
       Actualizar
     </button>
   </div>
@@ -545,7 +545,7 @@ body {
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
       <select id="overview-sector-filter" onchange="renderOverview()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
-        <option value="">Todos los sectores</option>
+        <option value="">Todos los sectors</option>
       </select>
       <span id="overview-latest-period" style="font-size: 11px; color: var(--text3);"></span>
       <select id="overview-period-filter" onchange="onGlobalPeriodChange()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
@@ -665,7 +665,7 @@ function fmtDate(v) {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
-function fmtVal(v, key = '') {
+function fmtVal(v, key = '', sector = '') {
   if (v === '' || v === null || v === undefined) return '—';
   const s = String(v);
   if (s.toLowerCase().includes('no mkt') || s.toLowerCase().includes('no market')) return '—';
@@ -689,7 +689,22 @@ function fmtVal(v, key = '') {
       'Liquidez Tit c/cot, POS. CALL, LELIQ, LEFIs'
     ];
 
-    if (pctKeys.includes(key)) {
+    if (key === 'Ratio Sector') {
+        const sNorm = String(sector).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        if (sNorm === 'PETROLEO' || sNorm === 'ENERGIA') {
+            result = (num * 100).toFixed(0) + '%';
+        } else if (sNorm === 'AGRO') {
+            result = parseFloat(num.toFixed(2)).toString();
+        } else if (sNorm === 'CONSTRUCCION') {
+            result = num.toFixed(0);
+        } else if (sNorm === 'INDUSTRIA') {
+            result = (num * 100).toFixed(0) + '%';
+        } else if (sNorm === 'SERVICIOS' || sNorm === 'COMERCIO') {
+            result = num.toFixed(0);
+        } else {
+            result = parseFloat(num.toFixed(2)).toString();
+        }
+    } else if (pctKeys.includes(key)) {
       result = (num * 100).toFixed(0) + '%';
     } else if (key === 'Net CapEx') {
       const fmt = new Intl.NumberFormat('es-AR', {
@@ -700,9 +715,9 @@ function fmtVal(v, key = '') {
       }).format(num);
       result = `${fmt} M`;
     } else if (key.includes('Mkt. Cap')) {
-      result = num.toFixed(2);
+      result = parseFloat(num.toFixed(2)).toString();
     } else {
-      result = parseFloat(num.toFixed(3)).toString();
+      result = parseFloat(num.toFixed(2)).toString();
     }
 
     if (num < 0) {
@@ -1324,7 +1339,7 @@ function createCardHTML(e, selectedPeriod, isOpen) {
 
   const ratioHtml = e.ratioKeys.map(k => {
     const rawCurr = targetData[k];
-    const v = fmtVal(rawCurr, k);
+    const v = fmtVal(rawCurr, k, e.sector);
     const isNoMkt = String(rawCurr || '').toLowerCase().includes('no mkt') || String(rawCurr || '').toLowerCase().includes('no market');
 
     let displayLabel = k;
