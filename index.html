@@ -506,7 +506,7 @@ body {
       <span id="status-txt" style="font-size:12px;color:var(--text2)">Cargando...</span>
     </div>
     <button class="btn-refresh" onclick="reloadData()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 0 20.49 15"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Actualizar
     </button>
   </div>
@@ -1327,6 +1327,18 @@ function createCardHTML(e, selectedPeriod, isOpen) {
     const v = fmtVal(rawCurr, k);
     const isNoMkt = String(rawCurr || '').toLowerCase().includes('no mkt') || String(rawCurr || '').toLowerCase().includes('no market');
 
+    let displayLabel = k;
+    if (k === 'Ratio Sector') {
+      const sNorm = String(e.sector).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      if (sNorm === "ENERGIA" || sNorm === "PETROLEO") displayLabel = "Reservas Probadas / Reservas Totales";
+      else if (sNorm === "AGRO") displayLabel = "Deuda Neta (inc. Bns de Cambio) / Ebitda";
+      else if (sNorm === "COMERCIO") displayLabel = "Bienes de Cambio / Activos Totales";
+      else if (sNorm === "CONSTRUCCION") displayLabel = "Días de Cobro";
+      else if (sNorm === "INDUSTRIA") displayLabel = "Bns de Uso / Activos Totales";
+      else if (sNorm === "SERVICIOS") displayLabel = "PN / Activo";
+      else displayLabel = "Ratio Sectores";
+    }
+
     let trendHtml = '';
     const valCurr = parseFloat(String(rawCurr).replace(',', '.'));
 
@@ -1433,13 +1445,14 @@ function createCardHTML(e, selectedPeriod, isOpen) {
       }
     }
 
-    let labelHtml = k;
-    if (tooltipsDef[k]) {
+    let labelHtml = displayLabel;
+    if (tooltipsDef[k] || tooltipsDef[displayLabel]) {
+      const toolTipText = tooltipsDef[k] || tooltipsDef[displayLabel];
       labelHtml = `
         <div class="tooltip-wrapper">
-          ${k}
+          ${displayLabel}
           <i class="tooltip-icon">i</i>
-          <span class="tooltip-text">${tooltipsDef[k]}</span>
+          <span class="tooltip-text">${toolTipText}</span>
         </div>
       `;
     }
