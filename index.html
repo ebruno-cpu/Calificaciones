@@ -544,6 +544,9 @@ body {
       <span id="overview-period" style="font-size: 12px; color: var(--text3);">—</span>
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
+      <select id="overview-sector-filter" onchange="renderOverview()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
+        <option value="">Todos los sectores</option>
+      </select>
       <span id="overview-latest-period" style="font-size: 11px; color: var(--text3);"></span>
       <select id="overview-period-filter" onchange="onGlobalPeriodChange()" style="height: 32px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; padding: 0 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;">
       </select>
@@ -775,14 +778,24 @@ async function reloadData() {
         }))
       };
     }).filter(e => e.ratios.length > 0);
+    
     const sectors = [...new Set(allData.map(e => e.sector).filter(Boolean))].sort();
     const sel = document.getElementById('sec-filter');
+    const overviewSelSector = document.getElementById('overview-sector-filter');
+    
     sel.innerHTML = '<option value="">Todos los sectores</option>';
+    overviewSelSector.innerHTML = '<option value="">Todos los sectores</option>';
+    
     sectors.forEach(s => {
       const o = document.createElement('option');
       o.value = s; o.textContent = s;
       sel.appendChild(o);
+      
+      const o2 = document.createElement('option');
+      o2.value = s; o2.textContent = s;
+      overviewSelSector.appendChild(o2);
     });
+    
     const bankPeriods = new Set();
     const genPeriods = new Set();
     allData.forEach(e => {
@@ -829,11 +842,15 @@ async function reloadData() {
 
 function renderOverview() {
   const selectedPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
+  const selectedSector = document.getElementById('overview-sector-filter') ? document.getElementById('overview-sector-filter').value : '';
+  
   if (selectedPeriod) {
     document.getElementById('overview-period').textContent = 'Información al: ' + selectedPeriod;
   }
   const periodData = [];
   allData.forEach(e => {
+    if (selectedSector !== '' && e.sector !== selectedSector) return;
+      
     let targetScore = null;
     let targetEstado = null;
     if (!selectedPeriod) {
