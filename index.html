@@ -1853,7 +1853,7 @@ function drawDetailChart(e) {
       position: 'right',
       grid: { display: false },
       ticks: { 
-          color: '#555a6a', 
+          color: '#555a6a', // Match original scale text color
           font: { size: 10 },
           callback: function(value) {
               return 'U$D ' + value;
@@ -1873,6 +1873,7 @@ function drawDetailChart(e) {
       ctx.save();
       ctx.font = '600 11px "DM Sans", sans-serif';
       
+      // Draw Score Labels
       datasetScore.forEach((val, i) => {
         const point = metaScore.data[i];
         if (!point) return;
@@ -1891,6 +1892,7 @@ function drawDetailChart(e) {
         ctx.fillText(Math.round(val), x, y);
       });
 
+      // Draw Price Labels
       if (hasPrecio && chart.data.datasets.length > 1) {
           const metaPrecio = chart.getDatasetMeta(1);
           const datasetPrecio = chart.data.datasets[1].data;
@@ -1900,15 +1902,39 @@ function drawDetailChart(e) {
               if (val === null || isNaN(val)) return;
               const point = metaPrecio.data[i];
               if (!point) return;
-              const x = point.x;
+              let x = point.x;
               let y = point.y;
               
-              if (i === 0) ctx.textAlign = 'left';
-              else if (i === datasetPrecio.length - 1) ctx.textAlign = 'right';
-              else ctx.textAlign = 'center';
+              if (i === 0) {
+                  ctx.textAlign = 'left';
+                  ctx.textBaseline = 'top';
+                  y += 10;
+              } else if (i === datasetPrecio.length - 1) {
+                  // Last Point Logic
+                  ctx.textAlign = 'right'; // Anchors right side of text to point
+                  x -= 6; // Move slightly left of the point
+                  
+                  const scorePoint = metaScore.data[i];
+                  let overlaps = false;
+                  
+                  // Check if Score and Price points are too close vertically
+                  if (scorePoint && Math.abs(y - scorePoint.y) < 35) {
+                      overlaps = true;
+                  }
+                  
+                  if (overlaps) {
+                      ctx.textBaseline = 'top'; // Draw text below the point
+                      y += 6;
+                  } else {
+                      ctx.textBaseline = 'bottom'; // Draw text above the point
+                      y -= 6;
+                  }
+              } else {
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'top';
+                  y += 10; 
+              }
 
-              ctx.textBaseline = 'top';
-              y += 10; 
               ctx.fillText(val.toFixed(2), x, y);
           });
       }
