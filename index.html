@@ -869,7 +869,8 @@ async function reloadData() {
         history: ratios.map(r => ({
           label: fmtDate(r['Trimestre']),
           score: parseFloat(r['Score']) || 0,
-          estado: String(r['Estado'] || '').trim()
+          estado: String(r['Estado'] || '').trim(),
+          precio: r['Precio Acción U$D'] ? parseFloat(String(r['Precio Acción U$D']).replace(',', '.')) : null
         }))
       };
     }).filter(e => e.ratios.length > 0);
@@ -1773,14 +1774,65 @@ function drawDetailChart(e) {
   if (detailCharts[e.id]) detailCharts[e.id].destroy();
   const col = getColor(e);
   const hex = colorHex(col);
+  
+  // Array de scores y etiquetas para la línea principal
+  const historyLabels = e.history.map(h => h.label);
+  const scoreData = e.history.map(h => h.score);
   const pointColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
-  const hasNegative = e.history.some(h => h.score < 0);
+  
+  // Extraemos los datos del precio. Usaremos solo los válidos.
+  const precioData = e.history.map(h => h.precio);
+  // Verificamos si hay al menos un precio válido para mostrar la línea secundaria
+  const hasPrecio = precioData.some(p => p !== null && !isNaN(p));
+  
+  const hasNegative = scoreData.some(s => s < 0);
+  
+  const datasets = [{
+    label: 'Score',
+    data: scoreData,
+    borderColor: hex + '66',
+    borderWidth: 2,
+    backgroundColor: hex + '10',
+    fill: true,
+    tension: 0,
+    pointBackgroundColor: pointColors,
+    pointBorderColor: '#0d0f14',
+    pointBorderWidth: 2,
+    pointRadius: 5,
+    pointHoverRadius: 8,
+    yAxisID: 'y'
+  }];
+
+  // Si hay datos de precio, agregamos la segunda línea
+  if (hasPrecio) {
+    datasets.push({
+      label: 'Precio Acción U$D',
+      data: precioData,
+      borderColor: '#9b59b6', // Color morado/violeta para diferenciarlo
+      borderWidth: 2,
+      borderDash: [5, 5],
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.1,
+      pointBackgroundColor: '#9b59b6',
+      pointBorderColor: '#0d0f14',
+      pointBorderWidth: 1.5,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      yAxisID: 'y1'
+    });
+  }
+
   const yScaleConfig = {
+    type: 'linear',
+    display: true,
+    position: 'left',
     max: 1000,
     grid: { color: 'rgba(255,255,255,0.04)' },
     ticks: { color: '#555a6a', font: { size: 10 }, stepSize: 250 },
     border: { color: 'transparent' }
   };
+  
   if (!hasNegative) {
     yScaleConfig.min = 0;
     yScaleConfig.beginAtZero = true;
@@ -1788,18 +1840,49 @@ function drawDetailChart(e) {
     delete yScaleConfig.min;
     yScaleConfig.beginAtZero = false;
   }
+
+  const scalesConfig = {
+    y: yScaleConfig,
+    x: {
+      grid: { display: false },
+      ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 0, minRotation: 0, autoSkip: false },
+      border: { color: 'transparent' }
+    }
+  };
+
+  // Si hay precio, configuramos el eje Y secundario (a la derecha)
+  if (hasPrecio) {
+    scalesConfig.y1 = {
+      type: 'linear',
+      display: true,
+      position: 'right',
+      grid: { display: false }, // Para no superponer líneas de cuadrícula
+      ticks: { 
+          color: '#9b59b6', 
+          font: { size: 10 },
+          callback: function(value) {
+              return 'U$D ' + value;
+          }
+      },
+      border: { color: 'transparent' }
+    };
+  }
+
   const allLabelsPlugin = {
     id: 'allLabels',
     afterDatasetsDraw(chart) {
       const { ctx } = chart;
-      const meta = chart.getDatasetMeta(0);
-      const dataset = chart.data.datasets[0].data;
+      const metaScore = chart.getDatasetMeta(0);
+      const datasetScore = chart.data.datasets[0].data;
+      
       ctx.save();
       ctx.font = '600 11px "DM Sans", sans-serif';
       ctx.fillStyle = '#e8eaf0';
       ctx.textAlign = 'center';
-      dataset.forEach((val, i) => {
-        const point = meta.data[i];
+      
+      // Dibujar labels del score
+      datasetScore.forEach((val, i) => {
+        const point = metaScore.data[i];
         if (!point) return;
         const x = point.x;
         let y = point.y;
@@ -1812,44 +1895,54 @@ function drawDetailChart(e) {
         }
         ctx.fillText(Math.round(val), x, y);
       });
+
+      // Dibujar labels del precio (si existe)
+      if (hasPrecio && chart.data.datasets.length > 1) {
+          const metaPrecio = chart.getDatasetMeta(1);
+          const datasetPrecio = chart.data.datasets[1].data;
+          
+          ctx.fillStyle = '#9b59b6';
+          datasetPrecio.forEach((val, i) => {
+              if (val === null || isNaN(val)) return;
+              const point = metaPrecio.data[i];
+              if (!point) return;
+              const x = point.x;
+              let y = point.y;
+              ctx.textBaseline = 'top';
+              y += 8; // Lo ponemos debajo del puntito para que no se pise con el score
+              ctx.fillText(val.toFixed(2), x, y);
+          });
+      }
+      
       ctx.restore();
     }
   };
+
   detailCharts[e.id] = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: e.history.map(h => h.label),
-      datasets: [{
-        data: e.history.map(h => h.score),
-        borderColor: hex + '66',
-        borderWidth: 2,
-        backgroundColor: hex + '10',
-        fill: true,
-        tension: 0,
-        pointBackgroundColor: pointColors,
-        pointBorderColor: '#0d0f14',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 8
-      }]
+      labels: historyLabels,
+      datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend: { 
+            display: hasPrecio,
+            position: 'top',
+            labels: { color: '#8b90a0', font: {size: 10}, usePointStyle: true, boxWidth: 6 }
+        },
         tooltip: {
-          callbacks: { label: ctx => ' Score: ' + Math.round(ctx.parsed.y) }
+          callbacks: { 
+              label: function(ctx) {
+                  if (ctx.datasetIndex === 0) return ' Score: ' + Math.round(ctx.parsed.y);
+                  if (ctx.datasetIndex === 1) return ' Precio: U$D ' + ctx.parsed.y;
+              }
+          }
         }
       },
-      scales: {
-        y: yScaleConfig,
-        x: {
-          grid: { display: false },
-          ticks: { color: '#555a6a', font: { size: 10 }, maxRotation: 0, minRotation: 0, autoSkip: false },
-          border: { color: 'transparent' }
-        }
-      }
+      scales: scalesConfig
     },
     plugins: [allLabelsPlugin]
   });
