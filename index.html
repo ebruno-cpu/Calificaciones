@@ -1775,14 +1775,11 @@ function drawDetailChart(e) {
   const col = getColor(e);
   const hex = colorHex(col);
   
-  // Array de scores y etiquetas para la línea principal
   const historyLabels = e.history.map(h => h.label);
   const scoreData = e.history.map(h => h.score);
   const pointColors = e.history.map(h => colorHex(estadoToColor(h.estado)));
   
-  // Extraemos los datos del precio. Usaremos solo los válidos.
   const precioData = e.history.map(h => h.precio);
-  // Verificamos si hay al menos un precio válido para mostrar la línea secundaria
   const hasPrecio = precioData.some(p => p !== null && !isNaN(p));
   
   const hasNegative = scoreData.some(s => s < 0);
@@ -1803,18 +1800,17 @@ function drawDetailChart(e) {
     yAxisID: 'y'
   }];
 
-  // Si hay datos de precio, agregamos la segunda línea
   if (hasPrecio) {
     datasets.push({
       label: 'Precio Acción U$D',
       data: precioData,
-      borderColor: '#9b59b6', // Color morado/violeta para diferenciarlo
+      borderColor: '#ffffff', 
       borderWidth: 2,
       borderDash: [5, 5],
       backgroundColor: 'transparent',
       fill: false,
       tension: 0.1,
-      pointBackgroundColor: '#9b59b6',
+      pointBackgroundColor: '#ffffff',
       pointBorderColor: '#0d0f14',
       pointBorderWidth: 1.5,
       pointRadius: 3,
@@ -1850,15 +1846,14 @@ function drawDetailChart(e) {
     }
   };
 
-  // Si hay precio, configuramos el eje Y secundario (a la derecha)
   if (hasPrecio) {
     scalesConfig.y1 = {
       type: 'linear',
       display: true,
       position: 'right',
-      grid: { display: false }, // Para no superponer líneas de cuadrícula
+      grid: { display: false },
       ticks: { 
-          color: '#9b59b6', 
+          color: '#ffffff', 
           font: { size: 10 },
           callback: function(value) {
               return 'U$D ' + value;
@@ -1880,28 +1875,25 @@ function drawDetailChart(e) {
       ctx.fillStyle = '#e8eaf0';
       ctx.textAlign = 'center';
       
-      // Dibujar labels del score
+      // Dibujar labels del score siempre por encima
       datasetScore.forEach((val, i) => {
         const point = metaScore.data[i];
         if (!point) return;
         const x = point.x;
         let y = point.y;
-        if (val >= 0) {
-          ctx.textBaseline = 'bottom';
-          y -= 8;
-        } else {
-          ctx.textBaseline = 'top';
-          y += 8;
-        }
+        
+        ctx.textBaseline = 'bottom';
+        y -= 10;
+        
         ctx.fillText(Math.round(val), x, y);
       });
 
-      // Dibujar labels del precio (si existe)
+      // Dibujar labels del precio siempre por debajo
       if (hasPrecio && chart.data.datasets.length > 1) {
           const metaPrecio = chart.getDatasetMeta(1);
           const datasetPrecio = chart.data.datasets[1].data;
           
-          ctx.fillStyle = '#9b59b6';
+          ctx.fillStyle = '#ffffff';
           datasetPrecio.forEach((val, i) => {
               if (val === null || isNaN(val)) return;
               const point = metaPrecio.data[i];
@@ -1909,7 +1901,7 @@ function drawDetailChart(e) {
               const x = point.x;
               let y = point.y;
               ctx.textBaseline = 'top';
-              y += 8; // Lo ponemos debajo del puntito para que no se pise con el score
+              y += 10; 
               ctx.fillText(val.toFixed(2), x, y);
           });
       }
