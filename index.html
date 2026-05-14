@@ -65,8 +65,8 @@ body {
   gap: 16px;
 }
 
-/* --- SOLUCIÓN PARA NITIDEZ PERFECTA --- */
-/* 1. La caja blanca fija que oculta los desbordes */
+/* --- LOGO DEL ENCABEZADO: AJUSTE DE NITIDEZ Y ESCALA --- */
+/* Contenedor cuadrado blanco estricto */
 .header-logo-wrapper {
   width: 65px;
   height: 65px;
@@ -75,24 +75,21 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
   position: relative;
-  overflow: hidden; /* Magia: recorta el excedente de la imagen */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden; /* Oculta todo el lienzo transparente sobrante de la imagen nativa */
 }
 
-/* 2. La imagen nativa ampliada y centrada */
+/* Imagen escalada internamente para ignorar sus márgenes invisibles */
 .header-logo {
-  /* Al darle más del 100%, el margen blanco original de tu PNG queda fuera de la caja */
-  width: 165%;
-  height: 165%;
+  /* Un ancho del 240% compensa perfectamente el espacio transparente nativo del archivo adjunto */
+  width: 240%;
+  height: 240%;
   object-fit: contain;
   position: absolute;
-  /* Centrado perfecto */
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  image-rendering: -webkit-optimize-contrast; /* Ayuda a suavizar el renderizado */
+  /* Optimizaciones para mantener los bordes definidos y nítidos */
+  image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
 }
 
