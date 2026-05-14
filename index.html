@@ -65,20 +65,35 @@ body {
   gap: 16px;
 }
 
-/* --- SOLUCIÓN DEL LOGO --- */
-/* Usamos imagen de fondo escalada para recortar los bordes invisibles del PNG original */
-.header-logo {
+/* --- SOLUCIÓN PARA NITIDEZ PERFECTA --- */
+/* 1. La caja blanca fija que oculta los desbordes */
+.header-logo-wrapper {
   width: 65px;
   height: 65px;
   background-color: #ffffff;
-  background-image: url('Logo MCM.png');
-  background-position: center;
-  /* El 150% hace un zoom interno perfecto, recortando el margen transparente de tu imagen */
-  background-size: 150%; 
-  background-repeat: no-repeat;
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden; /* Magia: recorta el excedente de la imagen */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 2. La imagen nativa ampliada y centrada */
+.header-logo {
+  /* Al darle más del 100%, el margen blanco original de tu PNG queda fuera de la caja */
+  width: 165%;
+  height: 165%;
+  object-fit: contain;
+  position: absolute;
+  /* Centrado perfecto */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  image-rendering: -webkit-optimize-contrast; /* Ayuda a suavizar el renderizado */
+  image-rendering: crisp-edges;
 }
 
 .header-title {
@@ -511,7 +526,9 @@ body {
 
 <header class="header">
   <div class="header-brand">
-    <div class="header-logo" title="Mills Capital Markets"></div>
+    <div class="header-logo-wrapper">
+      <img src="Logo MCM.png" alt="Mills Capital Markets" class="header-logo">
+    </div>
     <div>
       <div class="header-title">Líneas de Crédito</div>
       <div class="header-sub">Empresas Corporativas — Mercado Local ARG</div>
