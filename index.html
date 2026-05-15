@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Líneas de Crédito - Bonos Corporativos - Mills Capital Markets</title>
-<link rel="icon" href="Logo Markets.png?v=3" type="image/png">
+<link rel="icon" href="LOGO M.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -71,18 +71,16 @@ body {
   background-color: #ffffff;
   border-radius: var(--radius-sm);
   flex-shrink: 0;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
 .header-logo {
-  width: 120%;
-  height: 60%;
+  width: 70%;
+  height: 70%;
   object-fit: contain;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
@@ -500,7 +498,6 @@ body {
   padding: 3px !important;
 }
 
-/* Nuevas clases optimizadas para logo */
 .ccard-logo-head {
   width: 52px; height: 52px;
   border-radius: var(--radius-sm); object-fit: contain;
@@ -519,7 +516,7 @@ body {
 <header class="header">
   <div class="header-brand">
     <div class="header-logo-wrapper">
-      <img src="Logo Markets.png?v=3" alt="Mills Capital Markets" class="header-logo">
+      <img src="LOGO M.png" alt="Mills Capital Markets" class="header-logo">
     </div>
     <div>
       <div class="header-title">Líneas de Crédito</div>
@@ -649,7 +646,6 @@ let detailCharts = {};
 let expanded = {};
 let selectedCardPeriods = {};
 
-// Diccionario de logos movido al scope global (Optimización 1)
 const companyLogoMap = {
     "Aeropuertos Argentina 2000 S.A.": "AA 2000 Logo.png",
     "AA 2000": "AA 2000 Logo.png",
@@ -724,7 +720,6 @@ const companyLogoMap = {
     "YPF Luz": "YPF Luz Logo.png"
 };
 
-// Función Debounce para no saturar el navegador al escribir (Optimización 3)
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
