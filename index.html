@@ -1021,15 +1021,19 @@ async function reloadData() {
     const overviewSel = document.getElementById('overview-period-filter');
     if (overviewSel) {
       overviewSel.innerHTML = '';
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = 'Última información disponible';
+      overviewSel.appendChild(defaultOpt);
       sortedCommon.forEach(p => {
         const o = document.createElement('option');
         o.value = p; o.textContent = 'Período: ' + p;
         overviewSel.appendChild(o);
       });
+      document.getElementById('overview-period').textContent = 'Información al: Última disponible';
       if (sortedCommon.length > 0) {
-        document.getElementById('overview-period').textContent = 'Información al: ' + sortedCommon[0];
         const latestSpan = document.getElementById('overview-latest-period');
-        if (latestSpan) latestSpan.textContent = 'Último balance: ' + sortedCommon[0];
+        if (latestSpan) latestSpan.textContent = 'Último balance común: ' + sortedCommon[0];
       }
     }
     setStatus('ok', 'Datos actualizados');
@@ -1052,6 +1056,8 @@ function renderOverview() {
   
   if (selectedPeriod) {
     document.getElementById('overview-period').textContent = 'Información al: ' + selectedPeriod;
+  } else {
+    document.getElementById('overview-period').textContent = 'Información al: Última disponible';
   }
   const periodData = [];
   allData.forEach(e => {
