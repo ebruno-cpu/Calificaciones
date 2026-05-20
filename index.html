@@ -1054,27 +1054,45 @@ function renderOverview() {
   const selectedPeriod = document.getElementById('overview-period-filter') ? document.getElementById('overview-period-filter').value : '';
   const selectedSector = document.getElementById('overview-sector-filter') ? document.getElementById('overview-sector-filter').value : '';
   
+  let targetLatestPeriod = '';
+  if (!selectedPeriod) {
+    let maxDate = 0;
+    allData.forEach(e => {
+      if (e.history && e.history.length > 0) {
+        const lbl = e.history[e.history.length - 1].label;
+        const p = lbl.split('/');
+        if (p.length === 3) {
+          const d = new Date(2000 + parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])).getTime();
+          if (d > maxDate) {
+            maxDate = d;
+            targetLatestPeriod = lbl;
+          }
+        }
+      }
+    });
+  }
+
   if (selectedPeriod) {
     document.getElementById('overview-period').textContent = 'Información al: ' + selectedPeriod;
   } else {
-    document.getElementById('overview-period').textContent = 'Información al: Última disponible';
+    document.getElementById('overview-period').textContent = 'Información al: ' + (targetLatestPeriod || 'Última disponible');
   }
+
   const periodData = [];
   allData.forEach(e => {
     if (selectedSector !== '' && e.sector !== selectedSector) return;
       
     let targetScore = null;
     let targetEstado = null;
-    if (!selectedPeriod) {
-      targetScore = e.score;
-      targetEstado = e.estado;
-    } else {
-      const h = e.history.find(x => x.label === selectedPeriod);
-      if (h) {
-        targetScore = h.score;
-        targetEstado = h.estado;
-      }
+
+    const pToFind = selectedPeriod ? selectedPeriod : targetLatestPeriod;
+    const h = e.history.find(x => x.label === pToFind);
+    
+    if (h) {
+      targetScore = h.score;
+      targetEstado = h.estado;
     }
+
     if (targetScore !== null) {
       periodData.push({
         nombre: e.nombre,
@@ -1083,10 +1101,12 @@ function renderOverview() {
       });
     }
   });
+  
   const sorted = periodData.sort((a, b) => b.score - a.score);
   const labels = sorted.map(e => e.nombre);
   const scores = sorted.map(e => e.score);
   const colors = sorted.map(e => colorHex(estadoToColor(e.estado)));
+  
   if (overviewChart) overviewChart.destroy();
   overviewChart = new Chart(document.getElementById('overview-chart'), {
     type: 'bar',
