@@ -957,7 +957,11 @@ async function reloadData() {
       const id = String(emp['Empresa ID']);
       const esBanco = bancosIds.has(id);
       const src = esBanco ? ratiosBanco : ratiosGen;
-      const ratios = src.filter(r => String(r['Empresa ID']) === id);
+      const ratios = src.filter(r => {
+        const rawScore = r['Score'];
+        const hasScore = rawScore !== '' && rawScore !== null && rawScore !== undefined && String(rawScore).trim() !== '';
+        return String(r['Empresa ID']) === id && hasScore;
+      });
       ratios.sort((a, b) => {
         const da = parseDate(a['Trimestre']), db = parseDate(b['Trimestre']);
         return (+da || 0) - (+db || 0);
@@ -1700,8 +1704,9 @@ function drawSectorChart(e, selectedPeriod) {
 
   const sectorEmps = allData.filter(emp => emp.sector === e.sector).map(emp => {
     let histEntry = emp.history.find(h => h.label === selectedPeriod);
-    const scoreAtPeriod = histEntry ? histEntry.score : 0;
-    const estadoAtPeriod = histEntry ? histEntry.estado : '—';
+    if (!histEntry) return null;
+    const scoreAtPeriod = histEntry.score;
+    const estadoAtPeriod = histEntry.estado;
     
     const allScores = emp.history.map(h => h.score).sort((a, b) => a - b);
     const mid = Math.floor(allScores.length / 2);
@@ -1716,7 +1721,7 @@ function drawSectorChart(e, selectedPeriod) {
       medianHistorica: companyMedian,
       isCurrent: emp.id === e.id
     };
-  }).sort((a, b) => b.score - a.score);
+  }).filter(item => item !== null).sort((a, b) => b.score - a.score);
 
   const allSectorScores = [];
   allData.filter(emp => emp.sector === e.sector).forEach(emp => {
