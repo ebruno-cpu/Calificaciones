@@ -1649,8 +1649,9 @@ function renderCards() {
   filtered.forEach(e => {
     if (expanded[e.id]) {
       setTimeout(() => {
+        const currentPeriod = selectedCardPeriods[e.id] || globalPeriod;
         drawDetailChart(e);
-        drawSectorChart(e);
+        drawSectorChart(e, currentPeriod);
       }, 60);
     }
   });
@@ -1703,9 +1704,21 @@ function drawSectorChart(e, selectedPeriod) {
   const canvas = document.getElementById(`sectorChart-${e.id}`);
   if (!canvas) return;
 
+  // NUEVO: Resolver el período real que se está mostrando en la tarjeta
+  let targetIdx = e.history.length - 1;
+  if (selectedPeriod && selectedPeriod !== '') {
+    const foundIdx = e.history.findIndex(x => x.label === selectedPeriod);
+    if (foundIdx !== -1) targetIdx = foundIdx;
+  }
+  const actualPeriod = e.history[targetIdx] ? e.history[targetIdx].label : null;
+
+  if (!actualPeriod) return;
+
   const sectorEmps = allData.filter(emp => emp.sector === e.sector).map(emp => {
-    let histEntry = emp.history.find(h => h.label === selectedPeriod);
-    if (!histEntry) return null;
+    // Buscar el historial usando el período real resuelto (actualPeriod)
+    let histEntry = emp.history.find(h => h.label === actualPeriod);
+    if (!histEntry) return null; // Si no hay datos en este período, se excluye del gráfico
+    
     const scoreAtPeriod = histEntry.score;
     const estadoAtPeriod = histEntry.estado;
     
